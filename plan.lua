@@ -12,10 +12,24 @@ sctp = {
   ]]
   bind(sock, addr1, ...),
   listen(),
+  accept(),
+  
+  --[[
+    Should it be connect or connectx?
+  ]]
   connect(),
+  
+  --[[
+    Only allow non-depcrecated functions. For now at least
+  ]]
   send(),
   recv(),
   setsockopt(),
   setnonblocking(),
-  registerevents()
+  registerevents(),
+  
+  --[[
+    Should also handle sctp_free[p|l]addrs() internally
+  ]]
+  getpaddr(), getladdr()
 }
