@@ -23,8 +23,10 @@ constexpr int IPversionToAddrFamily(int ipv) {
 template<int IPV>
 class Socket {
   static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
-private:
+public:
   using SockAddrType = std::conditional_t<IPV == 4, sockaddr_in, sockaddr_in6>;
+public:
+  static constexpr int DefaultBackLogSize = 1000;
 private:
   int fd;
   bool roleIsServer;
@@ -32,8 +34,12 @@ private:
   std::vector<SockAddrType> addresses;
 public:
   Socket();
+  Socket(int sock);
+  ~Socket();
 public:
   auto bind(Lua::State*) -> int;
+  auto listen(Lua::State* L) -> int;
+  auto accept() -> int;
   auto close(Lua::State*) -> int;
 private:
   auto bindFirst(Lua::State*) -> int;
@@ -42,7 +48,7 @@ private:
 };
 
 template<int IPV>
-inline Socket<IPV>::Socket() : haveBoundAddresses(false) {
+inline Socket<IPV>::Socket() : roleIsServer(false), haveBoundAddresses(false) {
   static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
 
   fd = ::socket(IPversionToAddrFamily(IPV), SOCK_STREAM, IPPROTO_SCTP);
@@ -51,6 +57,16 @@ inline Socket<IPV>::Socket() : haveBoundAddresses(false) {
   }
   int True = 1;
   setsockopt(fd, IPPROTO_SCTP, SO_REUSEADDR, &True, sizeof(int));
+}
+
+template<int IPV>
+inline Socket<IPV>::Socket(int sock) : fd(sock), roleIsServer(false), haveBoundAddresses(false) {}
+
+template<int IPV>
+Socket<IPV>::~Socket() {
+  if(fd > -1){
+    ::close(fd);
+  }
 }
 
 //TODO: also handle table input for the addresses
@@ -95,13 +111,32 @@ auto Socket<IPV>::bind(Lua::State* L) -> int {
 }
 
 template<int IPV>
-auto Socket<IPV>::bindFirst(Lua::State* L) -> int {
-  int bindRes = 0;
-  if(IPV == 4) {
-    bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(addresses.data()), sizeof(SockAddrType));
-  } else {
-    bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(addresses.data()), sizeof(SockAddrType));
+auto Socket<IPV>::listen(Lua::State* L) -> int {
+  int backLogSize = Lua::Aux::OptInteger(L, 2, Socket<IPV>::DefaultBackLogSize);
+  int result = ::listen(fd, backLogSize);
+  if(result < 0) {
+    Lua::PushBoolean(L, false);
+    Lua::PushString(L, std::strerror(errno));
+    return 2;
   }
+  roleIsServer = true;
+  Lua::PushBoolean(L, true);
+  return 1;
+}
+
+template<int IPV>
+auto Socket<IPV>::accept() -> int {
+  int newFD = ::accept(fd, nullptr, nullptr);
+  if(newFD < 0 and (errno == EAGAIN or errno == EWOULDBLOCK)) {
+    //Non-blocking socket is being used, nothing to do
+    return 0;
+  }
+  return newFD;
+}
+
+template<int IPV>
+auto Socket<IPV>::bindFirst(Lua::State* L) -> int {
+  int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(addresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
     Lua::PushBoolean(L, false);
