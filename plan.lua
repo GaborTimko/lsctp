@@ -7,10 +7,11 @@ sctp = {
   
   --[[
     sock: contains the address family. should I support IP version mixing?
+    port: every given address will use this port number
     addr1: at least 1 address is mandatory
     ...: no limit for multihoming
   ]]
-  bind(sock, addr1, ...),
+  bind(sock, port, addr1, ...),
   listen(),
   accept(),
   

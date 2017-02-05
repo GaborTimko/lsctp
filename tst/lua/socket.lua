@@ -22,7 +22,7 @@ end
 ]]
 
 io.write("socket(ipv4): ")
-local sock4, error = sctp.socket(4)
+local sock4, error = sctp.socket4()
 
 if sock4 ~= nil and type(sock4) == "userdata" then
   printResult(true)
@@ -30,8 +30,27 @@ else
   printResult(false, error)
 end
 
+io.write("bind(ipv4SH): ")
+local success, error = sock4:bind(12345, "127.0.0.1")
+if success then
+  printResult(true)
+else
+  printResult(false, error)
+end
+sock4:close()
+
+local sock4MH = sctp.socket4()
+io.write("bind(ipv4MH): ")
+local success, error = sock4MH:bind(12345, "127.0.0.1", "127.0.0.2", "127.1.1.1")
+if success then
+  printResult(true)
+else
+  printResult(false, error)
+end
+sock4MH:close()
+
 io.write("socket(ipv6): ")
-local sock6, error = sctp.socket(6)
+local sock6, error = sctp.socket6()
 
 if sock6 ~= nil and type(sock6) == "userdata" then
   printResult(true)
@@ -39,14 +58,19 @@ else
   printResult(false, error)
 end
 
-io.write("socket(invalid): ")
-local invalidSock, error = sctp.socket(1)
-
---[[
-  TODO: also check the string "Address family not supported by this library: Invalid argument"
-]]
-if invalidSock == nil then
+io.write("bind(ipv6SH): ")
+local success, error = sock6:bind(12345, "::1")
+if success then
   printResult(true)
 else
   printResult(false, error)
 end
+sock6:close()
+
+--[[io.write("bind(ipv6MH): ")
+local success, error = sock6:bind(12345, "::1", "::2")
+if success then
+  printResult(true)
+else
+  printResult(false, error)
+end]]

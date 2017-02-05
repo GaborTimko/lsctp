@@ -10,7 +10,7 @@ solution "lsctp"
     targetprefix ""
     targetname "sctp"
     -- libdirs "lib"
-    links "lua"
+    links { "lua", "sctp" }
 
     configuration "debug"
       flags { "Symbols", "NoImportLib" }
