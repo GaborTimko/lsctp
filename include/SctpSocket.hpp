@@ -34,17 +34,17 @@ private:
   std::vector<SockAddrType> addresses;
 public:
   Socket();
-  Socket(int sock);
+  Socket(int sock) noexcept;
   ~Socket();
 public:
-  auto bind(Lua::State*) -> int;
-  auto listen(Lua::State* L) -> int;
-  auto accept() -> int;
-  auto close(Lua::State*) -> int;
+  auto bind(Lua::State*) noexcept -> int;
+  auto listen(Lua::State* L) noexcept -> int;
+  auto accept() noexcept -> int;
+  auto close(Lua::State*) noexcept -> int;
 private:
-  auto bindFirst(Lua::State*) -> int;
-  auto pushIPAddress(Lua::State*, const char* ip, uint16_t port, int idx) -> int;
-  auto checkIPConversionResult(Lua::State*, const char* ip, int result) -> int;
+  auto bindFirst(Lua::State*) noexcept -> int;
+  auto pushIPAddress(Lua::State*, const char* ip, uint16_t port, int idx) noexcept -> int;
+  auto checkIPConversionResult(Lua::State*, const char* ip, int result) noexcept -> int;
 };
 
 template<int IPV>
@@ -60,7 +60,7 @@ inline Socket<IPV>::Socket() : roleIsServer(false), haveBoundAddresses(false) {
 }
 
 template<int IPV>
-inline Socket<IPV>::Socket(int sock) : fd(sock), roleIsServer(false), haveBoundAddresses(false) {}
+inline Socket<IPV>::Socket(int sock) noexcept : fd(sock), roleIsServer(false), haveBoundAddresses(false) {}
 
 template<int IPV>
 Socket<IPV>::~Socket() {
@@ -71,7 +71,7 @@ Socket<IPV>::~Socket() {
 
 //TODO: also handle table input for the addresses
 template<int IPV>
-auto Socket<IPV>::bind(Lua::State* L) -> int {
+auto Socket<IPV>::bind(Lua::State* L) noexcept -> int {
   uint16_t port = htons(Lua::ToInteger(L, 2));
   int stackSize = Lua::GetTop(L);
   std::size_t addrCount = stackSize - 2;
@@ -111,7 +111,7 @@ auto Socket<IPV>::bind(Lua::State* L) -> int {
 }
 
 template<int IPV>
-auto Socket<IPV>::listen(Lua::State* L) -> int {
+auto Socket<IPV>::listen(Lua::State* L) noexcept -> int {
   int backLogSize = Lua::Aux::OptInteger(L, 2, Socket<IPV>::DefaultBackLogSize);
   int result = ::listen(fd, backLogSize);
   if(result < 0) {
@@ -125,7 +125,7 @@ auto Socket<IPV>::listen(Lua::State* L) -> int {
 }
 
 template<int IPV>
-auto Socket<IPV>::accept() -> int {
+auto Socket<IPV>::accept() noexcept -> int {
   int newFD = ::accept(fd, nullptr, nullptr);
   if(newFD < 0 and (errno == EAGAIN or errno == EWOULDBLOCK)) {
     //Non-blocking socket is being used, nothing to do
@@ -135,7 +135,7 @@ auto Socket<IPV>::accept() -> int {
 }
 
 template<int IPV>
-auto Socket<IPV>::bindFirst(Lua::State* L) -> int {
+auto Socket<IPV>::bindFirst(Lua::State* L) noexcept -> int {
   int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(addresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
@@ -147,7 +147,7 @@ auto Socket<IPV>::bindFirst(Lua::State* L) -> int {
 }
 
 template<>
-inline auto Socket<4>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) -> int {
+inline auto Socket<4>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
   addresses[idx].sin_family = AF_INET;
   addresses[idx].sin_port   = port;
   int conversion = ::inet_pton(AF_INET, ip, &addresses[idx].sin_addr);
@@ -155,7 +155,7 @@ inline auto Socket<4>::pushIPAddress(Lua::State* L, const char* ip, uint16_t por
 }
 
 template<>
-inline auto Socket<6>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) -> int {
+inline auto Socket<6>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
   addresses[idx].sin6_family = AF_INET6;
   addresses[idx].sin6_port   = port;
   int conversion = ::inet_pton(AF_INET6, ip, &addresses[idx].sin6_addr);
@@ -163,12 +163,10 @@ inline auto Socket<6>::pushIPAddress(Lua::State* L, const char* ip, uint16_t por
 }
 
 template<int IPV>
-auto Socket<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) -> int {
+auto Socket<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
   if(result == 0) {
-    char errorStr[100] = "Invalid IP: ";
-    std::strcat(errorStr, ip);
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, errorStr);
+    Lua::PushFString(L, "Invalid IP: %s", ip);
     return 2;
   } else if (result < 0) {
     Lua::PushBoolean(L, false);
@@ -179,7 +177,7 @@ auto Socket<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int res
 }
 
 template<int IPV>
-auto Socket<IPV>::close(Lua::State* L) -> int {
+auto Socket<IPV>::close(Lua::State* L) noexcept -> int {
   if(fd > -1 and ::close(fd) < 0) {
     Lua::PushBoolean(L, false);
     Lua::PushString(L, std::strerror(errno));

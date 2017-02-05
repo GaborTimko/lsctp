@@ -1,12 +1,12 @@
 sctp = {
   --[[
-    returns a userdata ("sock"), this will be the first parameter for every other sctp function
-    version: should it be a number or a string?
+    returns a userdata (Sctp::Socket)
   ]]
-  socket(version),
+  socket(),
   
   --[[
-    sock: contains the address family. should I support IP version mixing?
+    Calls bind() and sctp_bindx() internally. No IP version mixing
+    sock: contains the address family.
     port: every given address will use this port number
     addr1: at least 1 address is mandatory
     ...: no limit for multihoming
