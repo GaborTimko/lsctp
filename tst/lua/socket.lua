@@ -22,7 +22,7 @@ end
 ]]
 
 io.write("socket(ipv4): ")
-local sock4, error = sctp.socket4()
+local sock4, error = sctp.server.socket4()
 
 if sock4 ~= nil and type(sock4) == "userdata" then
   printResult(true)
@@ -39,7 +39,7 @@ else
 end
 sock4:close()
 
-local sock4MH = sctp.socket4()
+local sock4MH = sctp.server.socket4()
 io.write("bind(ipv4MH): ")
 local success, error = sock4MH:bind(12345, "127.0.0.1", "127.0.0.2", "127.1.1.1")
 if success then
@@ -50,7 +50,7 @@ end
 sock4MH:close()
 
 io.write("socket(ipv6): ")
-local sock6, error = sctp.socket6()
+local sock6, error = sctp.server.socket6()
 
 if sock6 ~= nil and type(sock6) == "userdata" then
   printResult(true)

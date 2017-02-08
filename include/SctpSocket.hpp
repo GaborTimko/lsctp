@@ -16,31 +16,22 @@
 
 namespace Sctp {
 
-constexpr int IPversionToAddrFamily(int ipv) {
-  return ipv == 4 ? AF_INET : AF_INET6;
-}
-
 template<int IPV>
 class Socket {
   static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
 public:
   using SockAddrType = std::conditional_t<IPV == 4, sockaddr_in, sockaddr_in6>;
-public:
-  static constexpr int DefaultBackLogSize = 1000;
-private:
+protected:
   int fd;
-  bool roleIsServer;
   bool haveBoundAddresses;
-  std::vector<SockAddrType> addresses;
+  std::vector<SockAddrType> boundAddresses;
 public:
   Socket();
   Socket(int sock) noexcept;
-  ~Socket();
 public:
   auto bind(Lua::State*) noexcept -> int;
-  auto listen(Lua::State* L) noexcept -> int;
-  auto accept() noexcept -> int;
   auto close(Lua::State*) noexcept -> int;
+  auto destroy(Lua::State*) noexcept -> int;
 private:
   auto bindFirst(Lua::State*) noexcept -> int;
   auto pushIPAddress(Lua::State*, const char* ip, uint16_t port, int idx) noexcept -> int;
@@ -48,10 +39,10 @@ private:
 };
 
 template<int IPV>
-inline Socket<IPV>::Socket() : roleIsServer(false), haveBoundAddresses(false) {
+inline Socket<IPV>::Socket() : haveBoundAddresses(false) {
   static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
 
-  fd = ::socket(IPversionToAddrFamily(IPV), SOCK_STREAM, IPPROTO_SCTP);
+  fd = ::socket(IPV == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
   if(fd == -1) {
     throw std::system_error(errno, std::system_category());
   }
@@ -60,13 +51,11 @@ inline Socket<IPV>::Socket() : roleIsServer(false), haveBoundAddresses(false) {
 }
 
 template<int IPV>
-inline Socket<IPV>::Socket(int sock) noexcept : fd(sock), roleIsServer(false), haveBoundAddresses(false) {}
+inline Socket<IPV>::Socket(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
 
 template<int IPV>
-Socket<IPV>::~Socket() {
-  if(fd > -1){
-    ::close(fd);
-  }
+inline auto Socket<IPV>::destroy(Lua::State* L) noexcept -> int {
+  return close(L);
 }
 
 //TODO: also handle table input for the addresses
@@ -80,8 +69,8 @@ auto Socket<IPV>::bind(Lua::State* L) noexcept -> int {
     Lua::PushString(L, "No addresses were given");
     return 2;
   }
-  addresses.resize(addrCount);
-  std::memset(addresses.data(), 0, sizeof(SockAddrType) * addrCount);
+  boundAddresses.resize(addrCount);
+  std::memset(boundAddresses.data(), 0, sizeof(SockAddrType) * addrCount);
   for(int i = 3; i <= stackSize; i++) {
     int idx = i - 3;
     auto addrI = Lua::ToString(L, i);
@@ -97,7 +86,7 @@ auto Socket<IPV>::bind(Lua::State* L) noexcept -> int {
   }
 
   if(addrCount > 1) {
-    int bindRes = ::sctp_bindx(fd, reinterpret_cast<sockaddr*>(addresses.data() + 1), addrCount - 1, SCTP_BINDX_ADD_ADDR);
+    int bindRes = ::sctp_bindx(fd, reinterpret_cast<sockaddr*>(boundAddresses.data() + 1), addrCount - 1, SCTP_BINDX_ADD_ADDR);
     if(bindRes < 0) {
       Lua::PushBoolean(L, false);
       Lua::PushString(L, std::strerror(errno));
@@ -111,32 +100,8 @@ auto Socket<IPV>::bind(Lua::State* L) noexcept -> int {
 }
 
 template<int IPV>
-auto Socket<IPV>::listen(Lua::State* L) noexcept -> int {
-  int backLogSize = Lua::Aux::OptInteger(L, 2, Socket<IPV>::DefaultBackLogSize);
-  int result = ::listen(fd, backLogSize);
-  if(result < 0) {
-    Lua::PushBoolean(L, false);
-    Lua::PushString(L, std::strerror(errno));
-    return 2;
-  }
-  roleIsServer = true;
-  Lua::PushBoolean(L, true);
-  return 1;
-}
-
-template<int IPV>
-auto Socket<IPV>::accept() noexcept -> int {
-  int newFD = ::accept(fd, nullptr, nullptr);
-  if(newFD < 0 and (errno == EAGAIN or errno == EWOULDBLOCK)) {
-    //Non-blocking socket is being used, nothing to do
-    return 0;
-  }
-  return newFD;
-}
-
-template<int IPV>
 auto Socket<IPV>::bindFirst(Lua::State* L) noexcept -> int {
-  int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(addresses.data()), sizeof(SockAddrType));
+  int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(boundAddresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
     Lua::PushBoolean(L, false);
@@ -148,17 +113,17 @@ auto Socket<IPV>::bindFirst(Lua::State* L) noexcept -> int {
 
 template<>
 inline auto Socket<4>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
-  addresses[idx].sin_family = AF_INET;
-  addresses[idx].sin_port   = port;
-  int conversion = ::inet_pton(AF_INET, ip, &addresses[idx].sin_addr);
+  boundAddresses[idx].sin_family = AF_INET;
+  boundAddresses[idx].sin_port   = port;
+  int conversion = ::inet_pton(AF_INET, ip, &boundAddresses[idx].sin_addr);
   return checkIPConversionResult(L, ip, conversion);
 }
 
 template<>
 inline auto Socket<6>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
-  addresses[idx].sin6_family = AF_INET6;
-  addresses[idx].sin6_port   = port;
-  int conversion = ::inet_pton(AF_INET6, ip, &addresses[idx].sin6_addr);
+  boundAddresses[idx].sin6_family = AF_INET6;
+  boundAddresses[idx].sin6_port   = port;
+  int conversion = ::inet_pton(AF_INET6, ip, &boundAddresses[idx].sin6_addr);
   return checkIPConversionResult(L, ip, conversion);
 }
 
@@ -185,6 +150,7 @@ auto Socket<IPV>::close(Lua::State* L) noexcept -> int {
     return 2;
   }
   fd = -1;
+  boundAddresses.clear();
   Lua::PushBoolean(L, true);
   return 1;
 }
