@@ -34,3 +34,15 @@ sctp = {
   ]]
   getpaddr(), getladdr()
 }
+
+
+sctp = {
+  server = {
+    socket4(),
+    socket6()
+  },
+  client = {
+    socket4(),
+    socket6()
+  }
+}

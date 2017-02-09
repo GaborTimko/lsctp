@@ -5,21 +5,23 @@
 
 namespace Sctp {
 
+namespace Socket {
+
 template<int IPV>
-class ServerSocket : public Socket<IPV> {
+class Server final : public Base<IPV> {
 public:
   static constexpr int DefaultBackLogSize = 1000;
   static const char* MetaTableName;
 public:
-  ServerSocket() : Socket<IPV>() {}
+  Server() : Base<IPV>() {}
 public:
   auto listen(Lua::State* L) noexcept -> int;
   auto accept() noexcept -> int;
 };
 
 template<int IPV>
-auto ServerSocket<IPV>::listen(Lua::State* L) noexcept -> int {
-  int backLogSize = Lua::Aux::OptInteger(L, 2, ServerSocket<IPV>::DefaultBackLogSize);
+auto Server<IPV>::listen(Lua::State* L) noexcept -> int {
+  int backLogSize = Lua::Aux::OptInteger(L, 2, Server<IPV>::DefaultBackLogSize);
   int result = ::listen(this->fd, backLogSize);
   if(result < 0) {
     Lua::PushBoolean(L, false);
@@ -31,7 +33,7 @@ auto ServerSocket<IPV>::listen(Lua::State* L) noexcept -> int {
 }
 
 template<int IPV>
-auto ServerSocket<IPV>::accept() noexcept -> int {
+auto Server<IPV>::accept() noexcept -> int {
   int newFD = ::accept(this->fd, nullptr, nullptr);
   if(newFD < 0 and (errno == EAGAIN or errno == EWOULDBLOCK)) {
     //Non-blocking socket is being used, nothing to do
@@ -39,6 +41,8 @@ auto ServerSocket<IPV>::accept() noexcept -> int {
   }
   return newFD;
 }
+
+} //namespace Socket
 
 } //namespace Sctp
 

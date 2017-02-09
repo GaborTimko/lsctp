@@ -1,6 +1,7 @@
 #include "Lua/Lua.hpp"
 #include "SctpSocket.hpp"
 #include "SctpServerSocket.hpp"
+#include "SctpClientSocket.hpp"
 
 namespace {
 
@@ -31,7 +32,7 @@ auto New(Lua::State* L) -> int {
   return 1;
 }
 
-template<int IPV, template<int> class SocketType>
+template<int IPV, template<int> class SocketType = Sctp::Socket::Base>
 using MemberFuncType = int (SocketType<IPV>::*)(Lua::State*);
 
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV, SocketType> fn>
@@ -40,95 +41,98 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (sock->*fn)(L);
 }
 
-template<int IPV>
-using BaseMemberFuncType = int (Sctp::Socket<IPV>::*)(Lua::State*);
-
-template<int IPV,  template<int> class SocketType, BaseMemberFuncType<IPV> fn>
-auto CallBaseMemberFunction(Lua::State* L) -> int {
+template<int IPV,  template<int> class SocketType, MemberFuncType<IPV> fn>
+auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
   return (sock->*fn)(L);
 }
 
-//template<int IPV>
-//auto Accept(Lua::State* L) -> int {
-//  auto sock = UserDataToSocket<IPV, Sctp::ServerSocket>(L, 1);
-//  int newFD = sock->accept();
-//  if(newFD < 0) {
-//    Lua::PushBoolean(L, false);
-//    Lua::PushFString(L, "accept() failed: %s", std::strerror(errno));
-//    return 2;
-//  }
-//  auto connSock = Lua::NewUserData(L, sizeof(Sctp::Socket<IPV>));
-//  if(connSock == nullptr) {
-//    Lua::PushNil(L);
-//    Lua::PushString(L, "Socket userdata allocation failed");
-//    return 2;
-//  }
-//
-//  new (connSock) Sctp::Socket<IPV>(newFD);
-//
-//  Lua::Aux::GetMetaTable(L, ChooseMetaTable<IPV, Sctp::Socket>());
-//  Lua::SetMetaTable(L, -2);
-//  return 1;
-//}
+template<int IPV>
+auto Accept(Lua::State* L) -> int {
+  auto sock = UserDataToSocket<IPV, Sctp::Socket::Server>(L, 1);
+  int newFD = sock->accept();
+  if(newFD < 0) {
+    Lua::PushBoolean(L, false);
+    Lua::PushFString(L, "accept() failed: %s", std::strerror(errno));
+    return 2;
+  }
+  auto connSock = Lua::NewUserData(L, sizeof(Sctp::Socket::Client<IPV>));
+  if(connSock == nullptr) {
+    Lua::PushNil(L);
+    Lua::PushString(L, "Socket userdata allocation failed");
+    return 2;
+  }
 
-const Lua::Aux::Reg SocketFuncs[] = {
+  new (connSock) Sctp::Socket::Client<IPV>(newFD);
+
+  Lua::Aux::GetMetaTable(L, Sctp::Socket::Client<IPV>::MetaTableName);
+  Lua::SetMetaTable(L, -2);
+  return 1;
+}
+
+
+const Lua::Aux::Reg ServerSocketMetaTable4[] = {
+  { "bind",   CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::bind> },
+  { "close",  CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::close> },
+  { "listen", CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::listen> },
+  { "accept", Accept<4> },
+  { "__gc",   CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::destroy> },
   { nullptr, nullptr }
 };
 
-const Lua::Aux::Reg ServerSocketMeta4[] = {
-  { "bind",   CallBaseMemberFunction<4, Sctp::ServerSocket, &Sctp::ServerSocket<4>::bind> },
-  { "close",  CallBaseMemberFunction<4, Sctp::ServerSocket, &Sctp::ServerSocket<4>::close> },
-  { "listen", CallMemberFunction<4, Sctp::ServerSocket,&Sctp::ServerSocket<4>::listen> },
-//  { "accept", Accept<4> },
-  { "__gc",   CallBaseMemberFunction<4, Sctp::ServerSocket, &Sctp::ServerSocket<4>::destroy> },
+const Lua::Aux::Reg ServerSocketMetaTable6[] = {
+  { "bind",   CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::bind> },
+  { "close",  CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::close> },
+  { "listen", CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::listen> },
+  { "accept", Accept<6> },
+  { "__gc",   CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::destroy> },
   { nullptr, nullptr }
 };
 
-const Lua::Aux::Reg ServerSocketMeta6[] = {
-  { "bind",   CallBaseMemberFunction<6, Sctp::ServerSocket, &Sctp::ServerSocket<6>::bind> },
-  { "close",  CallBaseMemberFunction<6, Sctp::ServerSocket, &Sctp::ServerSocket<6>::close> },
-  { "listen", CallMemberFunction<6, Sctp::ServerSocket,&Sctp::ServerSocket<6>::listen> },
-//  { "accept", Accept<6> },
-  { "__gc",   CallBaseMemberFunction<6, Sctp::ServerSocket, &Sctp::ServerSocket<6>::destroy> },
+const Lua::Aux::Reg ClientSocketMetaTable4[] = {
+  { "bind",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind> },
+  { "close",  CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
+  { "__gc",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy> },
   { nullptr, nullptr }
 };
 
-//const Lua::Aux::Reg ClientSocketMeta4[] = {
-//  { "bind",   CallMemberFunction<4, &Sctp::ClientSocket<4>::bind> },
-//  { "close",  CallMemberFunction<4, &Sctp::ClientSocket<4>::close> },
-//  { "accept", Accept<4> },
-//  { "__gc",   Destroy<4> },
-//  { nullptr, nullptr }
-//};
-//
-//const Lua::Aux::Reg ClientSocketMeta6[] = {
-//  { "bind",   CallMemberFunction<6, &Sctp::ClientSocket<6>::bind> },
-//  { "close",  CallMemberFunction<6, &Sctp::ClientSocket<6>::close> },
-//  { "accept", Accept<6> },
-//  { "__gc",   Destroy<6> },
-//  { nullptr, nullptr }
-//};
+const Lua::Aux::Reg ClientSocketMetaTable6[] = {
+  { "bind",   CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind> },
+  { "close",  CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
+  { "__gc",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy> },
+  { nullptr, nullptr }
+};
 
 } //anonymous namespace
 
 extern "C" int luaopen_sctp(Lua::State* L) {
-  Lua::Aux::NewMetaTable(L, Sctp::ServerSocket<4>::MetaTableName);
+  Lua::Aux::NewMetaTable(L, Sctp::Socket::Server<4>::MetaTableName);
   Lua::PushValue(L, -1);
   Lua::SetField(L, -2, "__index");
-  Lua::Aux::SetFuncs(L, ServerSocketMeta4, 0);
+  Lua::Aux::SetFuncs(L, ServerSocketMetaTable4, 0);
 
-  Lua::Aux::NewMetaTable(L, Sctp::ServerSocket<6>::MetaTableName);
+  Lua::Aux::NewMetaTable(L, Sctp::Socket::Server<6>::MetaTableName);
   Lua::PushValue(L, -1);
   Lua::SetField(L, -2, "__index");
-  Lua::Aux::SetFuncs(L, ServerSocketMeta6, 0);
+  Lua::Aux::SetFuncs(L, ServerSocketMetaTable6, 0);
 
+  Lua::Aux::NewMetaTable(L, Sctp::Socket::Client<4>::MetaTableName);
+  Lua::PushValue(L, -1);
+  Lua::SetField(L, -2, "__index");
+  Lua::Aux::SetFuncs(L, ClientSocketMetaTable4, 0);
+
+  Lua::Aux::NewMetaTable(L, Sctp::Socket::Client<6>::MetaTableName);
+  Lua::PushValue(L, -1);
+  Lua::SetField(L, -2, "__index");
+  Lua::Aux::SetFuncs(L, ClientSocketMetaTable6, 0);
+
+  const Lua::Aux::Reg SocketFuncs[] = { { nullptr, nullptr } };
   Lua::Aux::NewLib(L, SocketFuncs);
 
   Lua::Newtable(L);
-  Lua::PushCFunction(L, New<4, Sctp::ServerSocket>);
+  Lua::PushCFunction(L, New<4, Sctp::Socket::Server>);
   Lua::SetField(L, -2, "socket4");
-  Lua::PushCFunction(L, New<6, Sctp::ServerSocket>);
+  Lua::PushCFunction(L, New<6, Sctp::Socket::Server>);
   Lua::SetField(L, -2, "socket6");
   Lua::SetField(L, -2, "server");
   return 1;
