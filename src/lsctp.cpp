@@ -47,35 +47,11 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (sock->*fn)(L);
 }
 
-template<int IPV>
-auto Accept(Lua::State* L) -> int {
-  auto sock = UserDataToSocket<IPV, Sctp::Socket::Server>(L, 1);
-  int newFD = sock->accept();
-  if(newFD < 0) {
-    Lua::PushBoolean(L, false);
-    Lua::PushFString(L, "accept() failed: %s", std::strerror(errno));
-    return 2;
-  }
-  auto connSock = Lua::NewUserData(L, sizeof(Sctp::Socket::Client<IPV>));
-  if(connSock == nullptr) {
-    Lua::PushNil(L);
-    Lua::PushString(L, "Socket userdata allocation failed");
-    return 2;
-  }
-
-  new (connSock) Sctp::Socket::Client<IPV>(newFD);
-
-  Lua::Aux::GetMetaTable(L, Sctp::Socket::Client<IPV>::MetaTableName);
-  Lua::SetMetaTable(L, -2);
-  return 1;
-}
-
-
 const Lua::Aux::Reg ServerSocketMetaTable4[] = {
   { "bind",   CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::bind> },
   { "close",  CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::close> },
   { "listen", CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::listen> },
-  { "accept", Accept<4> },
+  { "accept", CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::accept> },
   { "__gc",   CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::destroy> },
   { nullptr, nullptr }
 };
@@ -84,7 +60,7 @@ const Lua::Aux::Reg ServerSocketMetaTable6[] = {
   { "bind",   CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::bind> },
   { "close",  CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::close> },
   { "listen", CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::listen> },
-  { "accept", Accept<6> },
+  { "accept", CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::accept> },
   { "__gc",   CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::destroy> },
   { nullptr, nullptr }
 };
