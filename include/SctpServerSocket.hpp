@@ -15,7 +15,7 @@ public:
 public:
   Server() : Base<IPV>() {}
 public:
-  auto listen(Lua::State* L) noexcept -> int;
+  auto listen(Lua::State*) noexcept -> int;
   auto accept() noexcept -> int;
 };
 
@@ -25,7 +25,7 @@ auto Server<IPV>::listen(Lua::State* L) noexcept -> int {
   int result = ::listen(this->fd, backLogSize);
   if(result < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, std::strerror(errno));
+    Lua::PushFString(L, "listen: %s", std::strerror(errno));
     return 2;
   }
   Lua::PushBoolean(L, true);

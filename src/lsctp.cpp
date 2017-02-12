@@ -90,16 +90,18 @@ const Lua::Aux::Reg ServerSocketMetaTable6[] = {
 };
 
 const Lua::Aux::Reg ClientSocketMetaTable4[] = {
-  { "bind",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind> },
-  { "close",  CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
-  { "__gc",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy> },
+  { "bind",     CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind> },
+  { "connect",  CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::connect> },
+  { "close",    CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
+  { "__gc",     CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy> },
   { nullptr, nullptr }
 };
 
 const Lua::Aux::Reg ClientSocketMetaTable6[] = {
-  { "bind",   CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind> },
-  { "close",  CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
-  { "__gc",   CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy> },
+  { "bind",     CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind> },
+  { "connect",  CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::connect> },
+  { "close",    CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
+  { "__gc",     CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::destroy> },
   { nullptr, nullptr }
 };
 
@@ -135,5 +137,13 @@ extern "C" int luaopen_sctp(Lua::State* L) {
   Lua::PushCFunction(L, New<6, Sctp::Socket::Server>);
   Lua::SetField(L, -2, "socket6");
   Lua::SetField(L, -2, "server");
+
+  Lua::Newtable(L);
+  Lua::PushCFunction(L, New<4, Sctp::Socket::Client>);
+  Lua::SetField(L, -2, "socket4");
+  Lua::PushCFunction(L, New<6, Sctp::Socket::Client>);
+  Lua::SetField(L, -2, "socket6");
+  Lua::SetField(L, -2, "client");
+
   return 1;
 }

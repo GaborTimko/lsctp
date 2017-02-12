@@ -23,10 +23,11 @@ class Base {
   static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
 public:
   using SockAddrType = std::conditional_t<IPV == 4, sockaddr_in, sockaddr_in6>;
+  using AddressArray = std::vector<SockAddrType>;
 protected:
   int fd;
   bool haveBoundAddresses;
-  std::vector<SockAddrType> boundAddresses;
+  AddressArray boundAddresses;
 public:
   Base();
   Base(int sock) noexcept;
@@ -34,16 +35,16 @@ public:
   auto bind(Lua::State*) noexcept -> int;
   auto close(Lua::State*) noexcept -> int;
   auto destroy(Lua::State*) noexcept -> int;
+protected:
+  auto loadAddresses(Lua::State*, AddressArray&, std::size_t& addrCount) noexcept -> int;
 private:
   auto bindFirst(Lua::State*) noexcept -> int;
-  auto pushIPAddress(Lua::State*, const char* ip, uint16_t port, int idx) noexcept -> int;
+  auto pushIPAddress(Lua::State*, AddressArray&, const char* ip, uint16_t port, int idx) noexcept -> int;
   auto checkIPConversionResult(Lua::State*, const char* ip, int result) noexcept -> int;
 };
 
 template<int IPV>
 inline Base<IPV>::Base() : haveBoundAddresses(false) {
-  static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
-
   fd = ::socket(IPV == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
   if(fd == -1) {
     throw std::system_error(errno, std::system_category());
@@ -63,23 +64,10 @@ inline auto Base<IPV>::destroy(Lua::State* L) noexcept -> int {
 //TODO: also handle table input for the addresses
 template<int IPV>
 auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
-  uint16_t port = htons(Lua::ToInteger(L, 2));
-  int stackSize = Lua::GetTop(L);
-  std::size_t addrCount = stackSize - 2;
-  if(addrCount < 1) {
-    Lua::PushBoolean(L, false);
-    Lua::PushString(L, "No addresses were given");
-    return 2;
-  }
-  boundAddresses.resize(addrCount);
-  std::memset(boundAddresses.data(), 0, sizeof(SockAddrType) * addrCount);
-  for(int i = 3; i <= stackSize; i++) {
-    int idx = i - 3;
-    auto addrI = Lua::ToString(L, i);
-    int pushRes = pushIPAddress(L, addrI, port, idx);
-    if(pushRes > 0) {
-      return pushRes;
-    }
+  std::size_t addrCount;
+  int loadAddrResult = loadAddresses(L, boundAddresses, addrCount);
+  if(loadAddrResult > 0) {
+    return loadAddrResult;
   }
 
   int retVal = bindFirst(L);
@@ -88,10 +76,9 @@ auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
   }
 
   if(addrCount > 1) {
-    int bindRes = ::sctp_bindx(fd, reinterpret_cast<sockaddr*>(boundAddresses.data() + 1), addrCount - 1, SCTP_BINDX_ADD_ADDR);
-    if(bindRes < 0) {
+    if(::sctp_bindx(fd, reinterpret_cast<sockaddr*>(boundAddresses.data() + 1), addrCount - 1, SCTP_BINDX_ADD_ADDR) < 0) {
       Lua::PushBoolean(L, false);
-      Lua::PushString(L, std::strerror(errno));
+      Lua::PushFString(L, "sctp_bindx: %s", std::strerror(errno));
       return 2;
     }
   }
@@ -102,42 +89,66 @@ auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
 }
 
 template<int IPV>
-auto Base<IPV>::bindFirst(Lua::State* L) noexcept -> int {
+inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs, std::size_t& addrCount) noexcept -> int {
+  uint16_t port = htons(Lua::ToInteger(L, 2));
+  int stackSize = Lua::GetTop(L);
+  addrCount = stackSize - 2;
+  if(addrCount < 1) {
+    Lua::PushBoolean(L, false);
+    Lua::PushString(L, "No addresses were given");
+    return 2;
+  }
+  addrs.clear();
+  addrs.resize(addrCount);
+  std::memset(addrs.data(), 0, sizeof(SockAddrType) * addrCount);
+  for(int i = 3; i <= stackSize; i++) {
+    int idx = i - 3;
+    auto addrI = Lua::ToString(L, i);
+    int pushResult = pushIPAddress(L, addrs, addrI, port, idx);
+    if(pushResult > 0) {
+      return pushResult;
+    }
+  }
+  return 0;
+}
+
+template<int IPV>
+inline auto Base<IPV>::bindFirst(Lua::State* L) noexcept -> int {
   int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(boundAddresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, std::strerror(errno));
+    Lua::PushFString(L, "bind: %s",  std::strerror(errno));
     return 2;
   }
   return bindRes;
 }
 
 template<>
-inline auto Base<4>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
-  boundAddresses[idx].sin_family = AF_INET;
-  boundAddresses[idx].sin_port   = port;
-  int conversion = ::inet_pton(AF_INET, ip, &boundAddresses[idx].sin_addr);
+inline auto Base<4>::pushIPAddress(Lua::State* L, AddressArray& addrs, const char* ip, uint16_t port, int idx) noexcept -> int {
+  addrs[idx].sin_family = AF_INET;
+  addrs[idx].sin_port   = port;
+  int conversion = ::inet_pton(AF_INET, ip, &addrs[idx].sin_addr);
   return checkIPConversionResult(L, ip, conversion);
 }
 
 template<>
-inline auto Base<6>::pushIPAddress(Lua::State* L, const char* ip, uint16_t port, int idx) noexcept -> int {
-  boundAddresses[idx].sin6_family = AF_INET6;
-  boundAddresses[idx].sin6_port   = port;
-  int conversion = ::inet_pton(AF_INET6, ip, &boundAddresses[idx].sin6_addr);
+inline auto Base<6>::pushIPAddress(Lua::State* L, AddressArray& addrs, const char* ip, uint16_t port, int idx) noexcept -> int {
+  addrs[idx].sin6_family = AF_INET6;
+  addrs[idx].sin6_port   = port;
+  int conversion = ::inet_pton(AF_INET6, ip, &addrs[idx].sin6_addr);
   return checkIPConversionResult(L, ip, conversion);
 }
 
 template<int IPV>
-auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
+inline auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
   if(result == 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushFString(L, "Invalid IP: %s", ip);
+    Lua::PushFString(L, "inet_pton: invalid IP: %s", ip);
     return 2;
   } else if (result < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, std::strerror(errno));
+    Lua::PushFString(L, "inet_pton: %s", std::strerror(errno));
     return 2;
   }
   return 0;
@@ -147,7 +158,7 @@ template<int IPV>
 auto Base<IPV>::close(Lua::State* L) noexcept -> int {
   if(fd > -1 and ::close(fd) < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, std::strerror(errno));
+    Lua::PushFString(L, "close: %s", std::strerror(errno));
     fd = -1;
     return 2;
   }
