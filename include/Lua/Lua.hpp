@@ -951,8 +951,13 @@ inline void AddChar(Buffer& B, char c) {
 #undef luaL_addchar
 
 
+#define lua_Integer ::Lua::Integer
+constexpr int BufferSize = LUAL_BUFFERSIZE;
+#undef lua_Integer
+#undef LUAL_BUFFERSIZE
+
 inline char* PrepBuffer(Buffer& B) {
-  return PrepBuffSize(B, LUAL_BUFFERSIZE);
+  return PrepBuffSize(B, BufferSize);
 }
 #undef luaL_prepbuffer
 
