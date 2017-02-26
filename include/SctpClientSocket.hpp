@@ -74,7 +74,7 @@ auto Client<IPV>::recv(Lua::State* L) noexcept -> int {
   ssize_t numBytesReceived = ::sctp_recvmsg(this->fd, recvBuffer, MaxRecvBufferSize, nullptr, nullptr, nullptr, nullptr);
   if(numBytesReceived < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushFString(L, (errno == EAGAIN ? "EAGAIN" : "sctp_recvmsg: %s"), std::strerror(errno));
+    Lua::PushFString(L, (errno == EAGAIN or errno == EWOULDBLOCK? "EAGAIN/EWOULDBLOCK" : "sctp_recvmsg: %s"), std::strerror(errno));
     return 2;
   }
   Lua::PushInteger(L, numBytesReceived);

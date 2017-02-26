@@ -11,6 +11,7 @@
 #include <netinet/sctp.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <fcntl.h>
 
 #include "Lua/Lua.hpp"
 
@@ -35,6 +36,7 @@ public:
   auto bind(Lua::State*) noexcept -> int;
   auto close(Lua::State*) noexcept -> int;
   auto destroy(Lua::State*) noexcept -> int;
+  auto setNonBlocking(Lua::State*) noexcept -> int;
 protected:
   auto loadAddresses(Lua::State*, AddressArray&, std::size_t& addrCount) noexcept -> int;
 private:
@@ -61,7 +63,24 @@ inline auto Base<IPV>::destroy(Lua::State* L) noexcept -> int {
   return close(L);
 }
 
-//TODO: also handle table input for the addresses
+template<int IPV>
+inline auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
+  int flags = fcntl(fd, F_GETFL);
+  if(flags < 0) {
+    Lua::PushBoolean(L, false);
+    Lua::PushFString(L, "fcntl(get): %s", std::strerror(errno));
+    return 2;
+  }
+  flags = fcntl(fd, F_SETFL, flags | O_NONBLOCK);
+  if(flags < 0) {
+    Lua::PushBoolean(L, false);
+    Lua::PushFString(L, "fcntl(set): %s", std::strerror(errno));
+    return 2;
+  }
+  Lua::PushBoolean(L, true);
+  return 1;
+}
+
 template<int IPV>
 auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
   std::size_t addrCount;

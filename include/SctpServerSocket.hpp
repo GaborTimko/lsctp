@@ -39,7 +39,7 @@ auto Server<IPV>::accept(Lua::State* L) noexcept -> int {
   if(newFD < 0 and (errno == EAGAIN or errno == EWOULDBLOCK)) {
     //Non-blocking socket is being used, nothing to do
     Lua::PushBoolean(L, false);
-    Lua::PushString(L, "accept: EAGAIN/EWOULDBLOCK");
+    Lua::PushString(L, "EAGAIN/EWOULDBLOCK");
     return 2;
   } else if(newFD < 0) {
     Lua::PushBoolean(L, false);
