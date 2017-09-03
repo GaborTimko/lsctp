@@ -764,8 +764,9 @@ inline void SetMetaTable(State* L, const char* tname) {
 inline void* TestUData(State* L, int ud, const char* tname) {
   return detail::luaL_testudata(L, ud, tname);
 }
-inline void* CheckUData(State* L, int ud, const char* tname) {
-  return detail::luaL_checkudata(L, ud, tname);
+template<class Type>
+inline Type* CheckUData(State* L, int ud, const char* tname) {
+  return static_cast<Type*>(detail::luaL_checkudata(L, ud, tname));
 }
 inline void Where(State* L, int lvl) {
   detail::luaL_where(L, lvl);

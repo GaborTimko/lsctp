@@ -8,7 +8,7 @@ namespace {
 template<int IPV, template<int> class SocketType>
 inline auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPV>* {
   //Note: it can raise an error
-  return static_cast<SocketType<IPV>*>(Lua::Aux::CheckUData(L, idx, SocketType<IPV>::MetaTableName));
+  return Lua::Aux::CheckUData<SocketType<IPV>>(L, idx, SocketType<IPV>::MetaTableName);
 }
 
 template<int IPV, template<int> class SocketType>
@@ -43,7 +43,8 @@ inline auto CallMemberFunction(Lua::State* L) -> int {
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV> fn>
 inline auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
-  return (sock->*fn)(L);
+  auto basePtr = static_cast<Sctp::Socket::Base<IPV>*>(sock);
+  return (basePtr->*fn)(L);
 }
 
 const Lua::Aux::Reg ServerSocketMetaTable4[] = {
