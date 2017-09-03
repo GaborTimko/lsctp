@@ -30,15 +30,16 @@ protected:
   bool haveBoundAddresses;
   AddressArray boundAddresses;
 public:
-  Base();
+  Base() noexcept;
   Base(int sock) noexcept;
 public:
+  auto create() noexcept -> bool;
   auto bind(Lua::State*) noexcept -> int;
   auto close(Lua::State*) noexcept -> int;
   auto destroy(Lua::State*) noexcept -> int;
   auto setNonBlocking(Lua::State*) noexcept -> int;
 protected:
-  auto loadAddresses(Lua::State*, AddressArray&, std::size_t& addrCount) noexcept -> int;
+  auto loadAddresses(Lua::State*, AddressArray&) noexcept -> int;
 private:
   auto bindFirst(Lua::State*) noexcept -> int;
   auto pushIPAddress(Lua::State*, AddressArray&, const char* ip, uint16_t port, int idx) noexcept -> int;
@@ -46,13 +47,17 @@ private:
 };
 
 template<int IPV>
-inline Base<IPV>::Base() : haveBoundAddresses(false) {
+inline Base<IPV>::Base() noexcept : haveBoundAddresses(false) {}
+
+template<int IPV>
+inline auto Base<IPV>::create() noexcept -> bool {
   fd = ::socket(IPV == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
   if(fd == -1) {
-    throw std::system_error(errno, std::system_category());
+    return false;
   }
   int True = 1;
   setsockopt(fd, IPPROTO_SCTP, SO_REUSEADDR, &True, sizeof(int));
+  return true;
 }
 
 template<int IPV>
@@ -83,8 +88,8 @@ inline auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
 
 template<int IPV>
 auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
-  std::size_t addrCount;
-  int loadAddrResult = loadAddresses(L, boundAddresses, addrCount);
+  int loadAddrResult = loadAddresses(L, boundAddresses);
+  std::size_t addrCount = boundAddresses.size();
   if(loadAddrResult > 0) {
     return loadAddrResult;
   }
@@ -108,10 +113,10 @@ auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
 }
 
 template<int IPV>
-inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs, std::size_t& addrCount) noexcept -> int {
+inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcept -> int {
   uint16_t port = htons(Lua::ToInteger(L, 2));
   int stackSize = Lua::GetTop(L);
-  addrCount = stackSize - 2;
+  std::size_t addrCount = stackSize - 2;
   if(addrCount < 1) {
     Lua::PushBoolean(L, false);
     Lua::PushString(L, "No addresses were given");

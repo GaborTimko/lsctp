@@ -22,4 +22,4 @@ solution "lsctp"
       targetdir "bin/release"
 
     configuration "gmake"
-      buildoptions { "-Wall -Wextra -Wformat -pedantic -std=c++14 -fPIC" }
+      buildoptions { "-Wall -Wextra -Wformat -pedantic -std=c++14 -fPIC -fno-exceptions -fno-rtti" }

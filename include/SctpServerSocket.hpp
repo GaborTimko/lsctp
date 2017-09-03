@@ -46,7 +46,7 @@ auto Server<IPV>::accept(Lua::State* L) noexcept -> int {
     Lua::PushFString(L, "accept() failed: %s", std::strerror(errno));
     return 2;
   }
-  auto connSock = Lua::NewUserData(L, sizeof(Sctp::Socket::Client<IPV>));
+  auto connSock = Lua::NewUserData<Sctp::Socket::Client<IPV>>(L);
   if(connSock == nullptr) {
     Lua::PushNil(L);
     Lua::PushString(L, "Socket userdata allocation failed");

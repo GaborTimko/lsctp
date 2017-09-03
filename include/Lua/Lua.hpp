@@ -354,8 +354,9 @@ inline Types RawGet(State* L, int idx, const void* p) {
 inline void CreateTable(State* L, int narr, int nrec) {
   detail::lua_createtable(L, narr, nrec);
 }
-inline void* NewUserData(State* L, std::size_t sz) {
-  return detail::lua_newuserdata(L, sz);
+template<class Type>
+inline Type* NewUserData(State* L) {
+  return static_cast<Type*>(detail::lua_newuserdata(L, sizeof(Type)));
 }
 inline Types GetMetaTable(State* L, int objindex) {
   return static_cast<Types>(detail::lua_getmetatable(L, objindex));

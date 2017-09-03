@@ -29,13 +29,12 @@ Client<IPV>::Client(int sock) : Base<IPV>(sock) {}
 template<int IPV>
 auto Client<IPV>::connect(Lua::State* L) noexcept -> int {
   typename Base<IPV>::AddressArray peerAddresses;
-  std::size_t addrCount;
-  int loadAddrResult = this->loadAddresses(L, peerAddresses, addrCount);
+  int loadAddrResult = this->loadAddresses(L, peerAddresses);
   if(loadAddrResult > 0) {
     return loadAddrResult;
   }
 
-  if(::sctp_connectx(this->fd, reinterpret_cast<sockaddr*>(peerAddresses.data()), addrCount, nullptr) < 0) {
+  if(::sctp_connectx(this->fd, reinterpret_cast<sockaddr*>(peerAddresses.data()), peerAddresses.size(), nullptr) < 0) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "sctp_connectx: %s", std::strerror(errno));
     return 2;

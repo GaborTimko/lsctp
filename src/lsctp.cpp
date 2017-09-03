@@ -13,17 +13,16 @@ inline auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPV>* {
 
 template<int IPV, template<int> class SocketType>
 auto New(Lua::State* L) -> int {
-  auto sock = Lua::NewUserData(L, sizeof(SocketType<IPV>));
+  auto sock = Lua::NewUserData<SocketType<IPV>>(L);
   if(sock == nullptr) {
     Lua::PushNil(L);
     Lua::PushString(L, "Socket userdata allocation failed");
     return 2;
   }
-  try {
-    new (sock) SocketType<IPV>();
-  } catch(const std::system_error& ex) {
-    Lua::PushNil(L);
-    Lua::PushString(L, ex.what());
+  new (sock) SocketType<IPV>();
+  if (not sock->create()) {
+    Lua::PushBoolean(L, false);
+    Lua::PushFString(L, "socket(): %s", std::strerror(errno));
     return 2;
   }
 
@@ -36,13 +35,13 @@ template<int IPV, template<int> class SocketType = Sctp::Socket::Base>
 using MemberFuncType = int (SocketType<IPV>::*)(Lua::State*);
 
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV, SocketType> fn>
-auto CallMemberFunction(Lua::State* L) -> int {
+inline auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
   return (sock->*fn)(L);
 }
 
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV> fn>
-auto CallMemberFunction(Lua::State* L) -> int {
+inline auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
   return (sock->*fn)(L);
 }
