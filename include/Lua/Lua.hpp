@@ -28,7 +28,6 @@ namespace Lua {
 namespace Conf {
 
 constexpr auto ExtraSpace = LUA_EXTRASPACE;
-#undef LUA_EXTRASPACE
 
 } //namespace Conf
 
@@ -43,15 +42,6 @@ constexpr auto Release    = LUA_RELEASE;
 constexpr auto CopyRight  = LUA_COPYRIGHT;
 constexpr auto Authors    = LUA_AUTHORS;
 
-#undef LUA_VERSION_MAJOR
-#undef LUA_VERSION_MINOR
-#undef LUA_VERSION_NUM
-#undef LUA_VERSION_RELEASE
-#undef LUA_VERSION
-#undef LUA_RELEASE
-#undef LUA_COPYRIGHT
-#undef LUA_AUTHORS
-
 constexpr auto Signature      = LUA_SIGNATURE;
 constexpr auto MultiReturn    = LUA_MULTRET;
 constexpr auto RegistryIndex  = LUA_REGISTRYINDEX;
@@ -61,11 +51,6 @@ constexpr auto UpvalueIndex(const IdxType i) -> decltype(lua_upvalueindex(-1)) {
   static_assert(std::is_arithmetic<IdxType>::value, "");
   return RegistryIndex - i;
 }
-
-#undef LUA_SIGNATURE
-#undef LUA_MULTRET
-#undef LUA_REGISTRYINDEX
-#undef lua_upvalueindex
 
 enum class Statuses {
   OK              = LUA_OK,
@@ -77,15 +62,6 @@ enum class Statuses {
   MsgHandlerError = LUA_ERRERR,
   FileError       = LUA_ERRFILE
 };
-
-#undef LUA_OK
-#undef LUA_YIELD
-#undef LUA_ERRRUN
-#undef LUA_ERRSYNTAX
-#undef LUA_ERRMEM
-#undef LUA_ERRGCMM
-#undef LUA_ERRERR
-#undef LUA_ERRFILE
 
 using State = detail::lua_State;
 
@@ -103,23 +79,9 @@ enum class Types {
   NumTags       = LUA_NUMTAGS
 };
 
-#undef LUA_TNONE
-#undef LUA_TNIL
-#undef LUA_TBOOLEAN
-#undef LUA_TLIGHTUSERDATA
-#undef LUA_TNUMBER
-#undef LUA_TSTRING
-#undef LUA_TTABLE
-#undef LUA_TFUNCTION
-#undef LUA_TUSERDATA
-#undef LUA_TTHREAD
-#undef LUA_NUMTAGS
-
 
 template<class ConstType>
 constexpr ConstType MinStack = ConstType(LUA_MINSTACK);
-
-#undef LUA_MINSTACK
 
 
 enum class RidX {
@@ -127,9 +89,6 @@ enum class RidX {
   Globals     = LUA_RIDX_GLOBALS,
   Last        = RidX::Globals
 };
-
-#undef LUA_RIDX_MAINTHREAD
-#undef LUA_RIDX_GLOBALS
 
 using Number    = detail::lua_Number;
 using Integer   = detail::lua_Integer;
@@ -261,24 +220,6 @@ enum class RelationalOperators {
   LessThan      = LUA_OPLT,
   LessOrEqual   = LUA_OPLE
 };
-
-#undef LUA_OPADD
-#undef LUA_OPSUB
-#undef LUA_OPMUL
-#undef LUA_OPMOD
-#undef LUA_OPPOW
-#undef LUA_OPDIV
-#undef LUA_OPIDIV
-#undef LUA_OPBAND
-#undef LUA_OPBOR
-#undef LUA_OPBXOR
-#undef LUA_OPSHL
-#undef LUA_OPSHR
-#undef LUA_OPUNM
-#undef LUA_OPBNOT
-#undef LUA_OPEQ
-#undef LUA_OPLT
-#undef LUA_OPLE
 
 inline void Arith(State* L, ArithmeticOperators op) {
   detail::lua_arith(L, static_cast<int>(op));
@@ -452,16 +393,6 @@ enum class GarbageCollectionOpts {
   IsRunning   = LUA_GCISRUNNING
 };
 
-#undef LUA_GCSTOP
-#undef LUA_GCRESTART
-#undef LUA_GCCOLLECT
-#undef LUA_GCCOUNT
-#undef LUA_GCCOUNTB
-#undef LUA_GCSTEP
-#undef LUA_GCSETPAUSE
-#undef LUA_GCSETSTEPMUL
-#undef LUA_GCISRUNNING
-
 inline int GC(State* L, GarbageCollectionOpts what, int data) {
   return detail::lua_gc(L, static_cast<int>(what), data);
 }
@@ -491,7 +422,7 @@ inline void SetAllocF(State* L, Alloc f, void* ud) {
 
 
 inline void* GetExtraSpace(State* L) {
-  return ((void *)((char *)(L) - Conf::ExtraSpace));
+  return lua_getextraspace(L);
 }
 inline Number ToNumber(State* L, int idx){
   return ToNumberX(L, idx, nullptr);
@@ -559,28 +490,6 @@ inline void Replace(State* L, int idx) {
   Pop(L, 1);
 }
 
-#undef lua_getextraspace
-#undef lua_tonumber
-#undef lua_tointeger
-#undef lua_pop
-#undef lua_newtable
-#undef lua_register
-#undef lua_pushcfunction
-#undef lua_isfunction
-#undef lua_istable
-#undef lua_islightuserdata
-#undef lua_isnil
-#undef lua_isboolean
-#undef lua_isthread
-#undef lua_isnone
-#undef lua_isnoneornil
-#undef lua_pushliteral
-#undef lua_pushglobaltable
-#undef lua_tostring
-#undef lua_insert
-#undef lua_remove
-#undef lua_replace
-
 
 enum class Hooks {
   Call      = LUA_HOOKCALL,
@@ -596,17 +505,6 @@ enum class HookMasks {
   Line    = LUA_MASKLINE,
   Count   = LUA_MASKCOUNT
 };
-
-#undef LUA_HOOKCALL
-#undef LUA_HOOKRET
-#undef LUA_HOOKLINE
-#undef LUA_HOOKCOUNT
-#undef LUA_HOOKTAILCALL
-
-#undef LUA_MASKCALL
-#undef LUA_MASKRET
-#undef LUA_MASKLINE
-#undef LUA_MASKCOUNT
 
 
 using Debug = detail::lua_Debug;
@@ -712,7 +610,6 @@ inline void CheckVersion(State* L, Number ver, size_t sz) {
 inline void CheckVersion(State* L) {
   CheckVersion(L, VersionNumber, NumSizes);
 }
-#undef luaL_checkversion
 
 
 
@@ -788,11 +685,8 @@ inline int ExecResult(State* L, int stat) {
 
 
 
-constexpr auto Noref  = -2;
-constexpr auto Refnil = -1;
-
-#undef LUA_NOREF
-#undef LUA_REFNIL
+constexpr auto Noref  = LUA_NOREF;
+constexpr auto Refnil = LUA_REFNIL;
 
 inline int Ref(State* L, int t) {
   return detail::luaL_ref(L, t);
@@ -811,8 +705,6 @@ inline Statuses LoadFileX(State* L, const char* filename, const char* mode) {
 inline Statuses LoadFile(State* L, const char* filename) {
   return static_cast<Statuses>(LoadFileX(L, filename, nullptr));
 }
-
-#undef luaL_loadfile
 
 inline Statuses LoadBufferX(State* L, const char* buff, size_t sz, const char* name, const char* mode) {
   return static_cast<Statuses>(detail::luaL_loadbufferx(L, buff, sz, name, mode));
@@ -854,9 +746,9 @@ inline void NewLib(State* L, const Reg (&l)[N]) {
 }
 
 inline void ArgCheck(State* L, bool cond, int arg, const char *extramsg) {
-    if(not cond) {
-      ArgError(L, arg, extramsg);
-    }
+  if(not cond) {
+    ArgError(L, arg, extramsg);
+  }
 }
 inline const char* CheckString(State* L, int arg) {
   return detail::luaL_checklstring(L, arg, nullptr);
@@ -888,36 +780,12 @@ inline Statuses LoadBuffer(State* L, const char* buff, size_t sz, const char* na
   return LoadBufferX(L, buff, sz, name, nullptr);
 }
 
-#undef luaL_newlibtable
-#undef luaL_newlib
-#undef luaL_argcheck
-#undef luaL_checkstring
-#undef luaL_optstring
-#undef luaL_typename
-#undef luaL_dofile
-#undef luaL_dostring
-#undef luaL_getmetatable
-#undef luaL_opt
-#undef luaL_loadbuffer
-#undef luaL_newlibtable
-#undef luaL_newlib
-#undef luaL_argcheck
-#undef luaL_checkstring
-#undef luaL_optstring
-#undef luaL_typename
-#undef luaL_dofile
-#undef luaL_dostring
-#undef luaL_getmetatable
-#undef luaL_opt
-#undef luaL_loadbuffer
-
 
 using Buffer = detail::luaL_Buffer;
 
 inline void AddSize(Buffer& B, size_t n) {
   luaL_addsize(&B, n);
 }
-#undef luaL_addsize
 
 inline void BuffInit(State* L, Buffer& B) {
   detail::luaL_buffinit(L, &B);
@@ -944,27 +812,166 @@ inline char* BuffInitSize(State* L, Buffer& B, size_t sz) {
   return detail::luaL_buffinitsize(L, &B, sz);
 }
 
-#define luaL_prepbuffsize(B, sz) PrepBuffSize(*B, sz)
+//#define luaL_prepbuffsize(B, sz) PrepBuffSize(*B, sz)
 inline void AddChar(Buffer& B, char c) {
   luaL_addchar(&B, c);
   //B.n < B.size || PrepBuffSize(B, 1), B.b[B.n++] = c;
 }
-#undef luaL_prepbuffsize
-#undef luaL_addchar
 
 
+//The macro "LUAL_BUFFERSIZE" uses "lua_Integer", which I put behind a namespace
 #define lua_Integer ::Lua::Integer
 constexpr int BufferSize = LUAL_BUFFERSIZE;
-#undef lua_Integer
-#undef LUAL_BUFFERSIZE
 
 inline char* PrepBuffer(Buffer& B) {
   return PrepBuffSize(B, BufferSize);
 }
-#undef luaL_prepbuffer
 
 } //Namepsace Aux
 
 } //Namespace Lua
+
+#undef LUA_EXTRASPACE
+
+#undef LUA_VERSION_MAJOR
+#undef LUA_VERSION_MINOR
+#undef LUA_VERSION_NUM
+#undef LUA_VERSION_RELEASE
+#undef LUA_VERSION
+#undef LUA_RELEASE
+#undef LUA_COPYRIGHT
+#undef LUA_AUTHORS
+
+#undef LUA_SIGNATURE
+#undef LUA_MULTRET
+#undef LUA_REGISTRYINDEX
+#undef lua_upvalueindex
+
+#undef LUA_OK
+#undef LUA_YIELD
+#undef LUA_ERRRUN
+#undef LUA_ERRSYNTAX
+#undef LUA_ERRMEM
+#undef LUA_ERRGCMM
+#undef LUA_ERRERR
+#undef LUA_ERRFILE
+
+#undef LUA_TNONE
+#undef LUA_TNIL
+#undef LUA_TBOOLEAN
+#undef LUA_TLIGHTUSERDATA
+#undef LUA_TNUMBER
+#undef LUA_TSTRING
+#undef LUA_TTABLE
+#undef LUA_TFUNCTION
+#undef LUA_TUSERDATA
+#undef LUA_TTHREAD
+#undef LUA_NUMTAGS
+
+#undef LUA_MINSTACK
+
+#undef LUA_RIDX_MAINTHREAD
+#undef LUA_RIDX_GLOBALS
+
+#undef LUA_OPADD
+#undef LUA_OPSUB
+#undef LUA_OPMUL
+#undef LUA_OPMOD
+#undef LUA_OPPOW
+#undef LUA_OPDIV
+#undef LUA_OPIDIV
+#undef LUA_OPBAND
+#undef LUA_OPBOR
+#undef LUA_OPBXOR
+#undef LUA_OPSHL
+#undef LUA_OPSHR
+#undef LUA_OPUNM
+#undef LUA_OPBNOT
+#undef LUA_OPEQ
+#undef LUA_OPLT
+#undef LUA_OPLE
+
+#undef LUA_GCSTOP
+#undef LUA_GCRESTART
+#undef LUA_GCCOLLECT
+#undef LUA_GCCOUNT
+#undef LUA_GCCOUNTB
+#undef LUA_GCSTEP
+#undef LUA_GCSETPAUSE
+#undef LUA_GCSETSTEPMUL
+#undef LUA_GCISRUNNING
+
+#undef lua_getextraspace
+#undef lua_tonumber
+#undef lua_tointeger
+#undef lua_pop
+#undef lua_newtable
+#undef lua_register
+#undef lua_pushcfunction
+#undef lua_isfunction
+#undef lua_istable
+#undef lua_islightuserdata
+#undef lua_isnil
+#undef lua_isboolean
+#undef lua_isthread
+#undef lua_isnone
+#undef lua_isnoneornil
+#undef lua_pushliteral
+#undef lua_pushglobaltable
+#undef lua_tostring
+#undef lua_insert
+#undef lua_remove
+#undef lua_replace
+
+#undef LUA_HOOKCALL
+#undef LUA_HOOKRET
+#undef LUA_HOOKLINE
+#undef LUA_HOOKCOUNT
+#undef LUA_HOOKTAILCALL
+
+#undef LUA_MASKCALL
+#undef LUA_MASKRET
+#undef LUA_MASKLINE
+#undef LUA_MASKCOUNT
+
+#undef luaL_checkversion
+
+#undef LUA_NOREF
+#undef LUA_REFNIL
+
+#undef luaL_loadfile
+
+#undef luaL_newlibtable
+#undef luaL_newlib
+#undef luaL_argcheck
+#undef luaL_checkstring
+#undef luaL_optstring
+#undef luaL_typename
+#undef luaL_dofile
+#undef luaL_dostring
+#undef luaL_getmetatable
+#undef luaL_opt
+#undef luaL_loadbuffer
+#undef luaL_newlibtable
+#undef luaL_newlib
+#undef luaL_argcheck
+#undef luaL_checkstring
+#undef luaL_optstring
+#undef luaL_typename
+#undef luaL_dofile
+#undef luaL_dostring
+#undef luaL_getmetatable
+#undef luaL_opt
+#undef luaL_loadbuffer
+
+#undef luaL_addsize
+
+#undef luaL_prepbuffsize
+#undef luaL_addchar
+
+//#undef lua_Integer
+#undef LUAL_BUFFERSIZE
+
+#undef luaL_prepbuffer
 
 #endif /* LUA_HPP */
