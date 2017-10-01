@@ -14,13 +14,15 @@ solution "lsctp"
     links { "lua", "sctp" }
 
     configuration "debug"
-      flags { "Symbols", "NoImportLib" }
+      flags {  "NoExceptions", "NoRTTI" }
+      buildoptions { "-Og -g" }
       targetdir "bin/debug"
 
     configuration "release"
       defines "NDEBUG"
-      flags { "Optimize", "NoImportLib" }
+      flags { "NoExceptions", "NoRTTI" }
+      buildoptions { "-O3 -s" }
       targetdir "bin/release"
 
     configuration "gmake"
-      buildoptions { "-Wall -Wextra -Wformat -pedantic -std=c++14 -fPIC -fno-exceptions -fno-rtti" }
+      buildoptions { "-Wall -Wextra -Wformat -pedantic -std=c++14" }
