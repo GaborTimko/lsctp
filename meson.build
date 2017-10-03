@@ -12,7 +12,6 @@ shared_library(
   cpp_pch : 'pch/PreComp.hpp',
   link_args: ['-lsctp', '--coverage'],
   link_with : lua.get_variable('lualib'),
-  install_dir : meson.source_root() + '/bin'
 )
 
 test(
