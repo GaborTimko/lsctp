@@ -39,7 +39,7 @@ luaSources = [
 lualib = shared_library('lua53',
   luaSources,
   include_directories : include_directories('src'),
-  c_args : ['-DLUA_USE_LINUX', '-Wextra', '-Wall'],
+  c_args : '-DLUA_USE_LINUX -Wextra -Wall'.split(),
   #dependencies : [libm, libdl, libreadline],
   link_args: ['-lm', '-ldl', '-lreadline', '-Wl,-E'],
   install_dir : 'bin'
