@@ -7,7 +7,7 @@ shared_library(
   'sctp',
   'src/lsctp.cpp',
   name_prefix : '',
-  cpp_args : '-Wall -Wextra -Wformat -pedantic -fno-exceptions -fno-rtti --coverage'.split(),
+  cpp_args : '-Wall -Wextra -Wformat -pedantic -fno-exceptions -fno-rtti --coverage -Winvalid-pch'.split(),
   include_directories : include_directories('include'),
   cpp_pch : 'pch/PreComp.hpp',
   link_args: ['-lsctp', '--coverage'],
