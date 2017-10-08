@@ -12,6 +12,8 @@ shared_library(
   cpp_pch : 'pch/PreComp.hpp',
   link_args: ['-lsctp', '--coverage'],
   link_with : lua.get_variable('lualib'),
+  install : true,
+  install_dir : get_option('prefix') + '/bin'
 )
 
 test(

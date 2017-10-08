@@ -42,7 +42,8 @@ lualib = shared_library('lua53',
   c_args : '-DLUA_USE_LINUX -Wextra -Wall'.split(),
   #dependencies : [libm, libdl, libreadline],
   link_args: ['-lm', '-ldl', '-lreadline', '-Wl,-E'],
-  install_dir : 'bin'
+  install : true,
+  install_dir : get_option('prefix') + '/bin'
 )
 
 luaInterpreter =  executable(
@@ -50,5 +51,6 @@ luaInterpreter =  executable(
   'src/lua.c',
   link_with : lualib,
   link_args: ['-lm', '-ldl', '-lreadline', '-Wl,-E'],
-  install_dir : 'bin'
+  install : true,
+  install_dir : get_option('prefix') + '/bin'
 )
