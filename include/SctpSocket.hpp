@@ -1,7 +1,6 @@
 #ifndef LSSOCKET_HPP
 #define LSSOCKET_HPP
 
-#include <system_error>
 #include <vector>
 #include <cstring>
 #include <cerrno>
@@ -47,10 +46,10 @@ private:
 };
 
 template<int IPV>
-inline Base<IPV>::Base() noexcept : haveBoundAddresses(false) {}
+Base<IPV>::Base() noexcept : haveBoundAddresses(false) {}
 
 template<int IPV>
-inline auto Base<IPV>::create() noexcept -> bool {
+auto Base<IPV>::create() noexcept -> bool {
   fd = ::socket(IPV == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
   if(fd == -1) {
     return false;
@@ -61,15 +60,15 @@ inline auto Base<IPV>::create() noexcept -> bool {
 }
 
 template<int IPV>
-inline Base<IPV>::Base(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
+Base<IPV>::Base(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
 
 template<int IPV>
-inline auto Base<IPV>::destroy(Lua::State* L) noexcept -> int {
+ auto Base<IPV>::destroy(Lua::State* L) noexcept -> int {
   return close(L);
 }
 
 template<int IPV>
-inline auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
+ auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
   int flags = fcntl(fd, F_GETFL);
   if(flags < 0) {
     Lua::PushBoolean(L, false);
@@ -113,7 +112,7 @@ auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
 }
 
 template<int IPV>
-inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcept -> int {
+auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcept -> int {
   uint16_t port = htons(Lua::ToInteger(L, 2));
   int stackSize = Lua::GetTop(L);
   std::size_t addrCount = stackSize - 2;
@@ -137,7 +136,7 @@ inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcep
 }
 
 template<int IPV>
-inline auto Base<IPV>::bindFirst(Lua::State* L) noexcept -> int {
+auto Base<IPV>::bindFirst(Lua::State* L) noexcept -> int {
   int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(boundAddresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
@@ -165,7 +164,7 @@ inline auto Base<6>::pushIPAddress(Lua::State* L, AddressArray& addrs, const cha
 }
 
 template<int IPV>
-inline auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
+auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
   if(result == 0) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "inet_pton: invalid IP: %s", ip);

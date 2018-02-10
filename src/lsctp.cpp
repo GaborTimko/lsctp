@@ -26,8 +26,7 @@ const char* Client<6>::MetaTableName = "ClientSocketMeta6";
 namespace {
 
 template<int IPV, template<int> class SocketType>
-inline auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPV>* {
-  //Note: it can raise an error
+auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPV>* {
   return Lua::Aux::TestUData<SocketType<IPV>>(L, idx, SocketType<IPV>::MetaTableName);
 }
 
@@ -55,7 +54,7 @@ template<int IPV, template<int> class SocketType = Sctp::Socket::Base>
 using MemberFuncType = int (SocketType<IPV>::*)(Lua::State*);
 
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV, SocketType> fn>
-inline auto CallMemberFunction(Lua::State* L) -> int {
+auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
@@ -66,7 +65,7 @@ inline auto CallMemberFunction(Lua::State* L) -> int {
 }
 
 template<int IPV,  template<int> class SocketType, MemberFuncType<IPV> fn>
-inline auto CallMemberFunction(Lua::State* L) -> int {
+auto CallMemberFunction(Lua::State* L) -> int {
   auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
