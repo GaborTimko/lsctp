@@ -1,5 +1,7 @@
 project('lua', 'c', default_options : ['c_std=c99'])
 
+luaIncludes = include_directories('src')
+
 luaSources = [
   'src/lapi.c',
   'src/lauxlib.c',
@@ -38,19 +40,24 @@ luaSources = [
 
 lualib = shared_library('lua53',
   luaSources,
-  include_directories : include_directories('src'),
+  include_directories : luaIncludes,
   c_args : '-DLUA_USE_LINUX -Wextra -Wall'.split(),
-  #dependencies : [libm, libdl, libreadline],
-  link_args: ['-lm', '-ldl', '-lreadline', '-Wl,-E'],
+  link_args: '-lm -ldl -lreadline -Wl,-E'.split(),
   install : true,
   install_dir : get_option('prefix') + '/bin'
 )
 
-luaInterpreter =  executable(
+luadep = declare_dependency(
+  include_directories : luaIncludes,
+  link_with : lualib,
+  version : '5.3'
+)
+
+luaInterpreter = executable(
   'lua',
   'src/lua.c',
-  link_with : lualib,
-  link_args: ['-lm', '-ldl', '-lreadline', '-Wl,-E'],
-  install : true,
-  install_dir : get_option('prefix') + '/bin'
+  dependencies : luadep,
+  link_args: ['-lm -ldl -lreadline -Wl,-E'.split(),
+  #install : true,
+  #install_dir : get_option('prefix') + '/bin'
 )

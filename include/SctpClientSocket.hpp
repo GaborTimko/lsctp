@@ -7,15 +7,15 @@ namespace Sctp {
 
 namespace Socket {
 
-template<int IPV>
-class Client final : public Base<IPV> {
+template<int IPVersion>
+class Client final : public Base<IPVersion> {
 public:
   static const char* MetaTableName;
   static const std::size_t MaxRecvBufferSize = 5000;
 private:
   char recvBuffer[MaxRecvBufferSize];
 public:
-  Client() : Base<IPV>() {}
+  Client() : Base<IPVersion>() {}
   Client(int sock);
 public:
   auto connect(Lua::State*) noexcept -> int;
@@ -23,12 +23,12 @@ public:
   auto recv(Lua::State*) noexcept -> int;
 };
 
-template<int IPV>
-Client<IPV>::Client(int sock) : Base<IPV>(sock) {}
+template<int IPVersion>
+Client<IPVersion>::Client(int sock) : Base<IPVersion>(sock) {}
 
-template<int IPV>
-auto Client<IPV>::connect(Lua::State* L) noexcept -> int {
-  typename Base<IPV>::AddressArray peerAddresses;
+template<int IPVersion>
+auto Client<IPVersion>::connect(Lua::State* L) noexcept -> int {
+  typename Base<IPVersion>::AddressArray peerAddresses;
   int loadAddrResult = this->loadAddresses(L, peerAddresses);
   if(loadAddrResult > 0) {
     return loadAddrResult;
@@ -44,8 +44,8 @@ auto Client<IPV>::connect(Lua::State* L) noexcept -> int {
   return 1;
 }
 
-template<int IPV>
-auto Client<IPV>::send(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+auto Client<IPVersion>::send(Lua::State* L) noexcept -> int {
   std::size_t bufferLength;
   auto buffer = Lua::Aux::CheckLString(L, -1, bufferLength);
 
@@ -63,8 +63,8 @@ auto Client<IPV>::send(Lua::State* L) noexcept -> int {
   return 1;
 }
 
-template<int IPV>
-auto Client<IPV>::recv(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+auto Client<IPVersion>::recv(Lua::State* L) noexcept -> int {
 //  sctp_sndrcvinfo info;
 //  std::memset(&info, 0, sizeof(sctp_sndrcvinfo));
 

@@ -25,37 +25,37 @@ const char* Client<6>::MetaTableName = "ClientSocketMeta6";
 
 namespace {
 
-template<int IPV, template<int> class SocketType>
-auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPV>* {
-  return Lua::Aux::TestUData<SocketType<IPV>>(L, idx, SocketType<IPV>::MetaTableName);
+template<int IPVersion, template<int> class SocketType>
+auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPVersion>* {
+  return Lua::Aux::TestUData<SocketType<IPVersion>>(L, idx, SocketType<IPVersion>::MetaTableName);
 }
 
-template<int IPV, template<int> class SocketType>
+template<int IPVersion, template<int> class SocketType>
 auto New(Lua::State* L) -> int {
-  auto sock = Lua::NewUserData<SocketType<IPV>>(L);
+  auto sock = Lua::NewUserData<SocketType<IPVersion>>(L);
   if(sock == nullptr) {
     Lua::PushNil(L);
     Lua::PushString(L, "Socket userdata allocation failed");
     return 2;
   }
-  new (sock) SocketType<IPV>();
+  new (sock) SocketType<IPVersion>();
   if (not sock->create()) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "socket(): %s", std::strerror(errno));
     return 2;
   }
 
-  Lua::Aux::GetMetaTable(L, SocketType<IPV>::MetaTableName);
+  Lua::Aux::GetMetaTable(L, SocketType<IPVersion>::MetaTableName);
   Lua::SetMetaTable(L, -2);
   return 1;
 }
 
-template<int IPV, template<int> class SocketType = Sctp::Socket::Base>
-using MemberFuncType = int (SocketType<IPV>::*)(Lua::State*);
+template<int IPVersion, template<int> class SocketType = Sctp::Socket::Base>
+using MemberFuncType = int (SocketType<IPVersion>::*)(Lua::State*);
 
-template<int IPV,  template<int> class SocketType, MemberFuncType<IPV, SocketType> fn>
+template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion, SocketType> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
-  auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
+  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "Can\'t call function, pointer is nil.");
@@ -64,15 +64,15 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (sock->*fn)(L);
 }
 
-template<int IPV,  template<int> class SocketType, MemberFuncType<IPV> fn>
+template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
-  auto sock = UserDataToSocket<IPV, SocketType>(L, 1);
+  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "Can\'t call function, pointer is nil.");
     return 2;
   }
-  auto basePtr = static_cast<Sctp::Socket::Base<IPV>*>(sock);
+  auto basePtr = static_cast<Sctp::Socket::Base<IPVersion>*>(sock);
   return (basePtr->*fn)(L);
 }
 
