@@ -1,0 +1,91 @@
+#I'm still just experimenting with clang-format.
+#Several options are either missing, I missed
+#or not clear for me yet how it changes the code
+
+#Known issues:
+# - array of arrays are badly indented
+# - visiblity modifiers are indented
+# - space is added for comments even though the offset is set to 0
+
+
+Language: Cpp
+
+AccessModifierOffset: 0
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: false
+AlignEscapedNewlines: Left
+AlignOperands: true
+AlignTrailingComments: true
+AllowShortBlocksOnASingleLine: false
+AllowAllParametersOfDeclarationOnNextLine: true
+AllowShortBlocksOnASingleLine: true
+AllowShortCaseLabelsOnASingleLine: true
+AllowShortFunctionsOnASingleLine: Inline
+#AllowShortIfStatementsOnASingleLine: false
+#AllowShortLoopsOnASingleLine: false
+AlwaysBreakAfterReturnType: None
+AlwaysBreakBeforeMultilineStrings: false
+AlwaysBreakTemplateDeclarations : true
+BinPackArguments: false
+BinPackParameters: false
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: Attach
+BreakBeforeInheritanceComma: false
+BreakBeforeTernaryOperators: true
+
+#Nope, "BeforeComma" if necessary
+#BreakConstructorInitializers
+
+BreakStringLiterals: false
+
+#0 (i.e. no limit) is also tempting
+ColumnLimit: 200
+
+CompactNamespaces: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+
+#Not sure yet what exactly this is
+#ConstructorInitializerIndentWidth
+
+#Undecided
+#ContinuationIndentWidth
+
+Cpp11BracedListStyle: false
+FixNamespaceComments: true
+
+#Not avaialbe in version 5
+#IncludeBlocks: Preserve
+#IncludeCategories:
+IndentCaseLabels: false
+
+#This is not yet available int version 5
+#Neither the preferred option (indent with hash) even in version 7
+#IndentPPDirectives: AfterHash
+
+IndentWidth: 2
+KeepEmptyLinesAtTheStartOfBlocks: false
+MaxEmptyLinesToKeep: 1
+NamespaceIndentation: None
+
+#TODO: Figure out what the hell the "Penalty*" options do
+#and use them if useful
+
+PointerAlignment: Left
+ReflowComments: true
+SortIncludes : false
+SortUsingDeclarations: false
+SpaceAfterCStyleCast: false
+SpaceAfterTemplateKeyword: false
+SpaceBeforeAssignmentOperators: true
+SpaceBeforeParens: Never
+SpaceInEmptyParentheses: false
+SpacesBeforeTrailingComments: 0
+SpacesInAngles: false
+SpacesInCStyleCastParentheses: false
+SpacesInContainerLiterals: true
+SpacesInParentheses: false
+SpacesInSquareBrackets: false
+Standard : Cpp11
+TabWidth: 2
+UseTab: Never
