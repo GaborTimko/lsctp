@@ -1,7 +1,6 @@
 #ifndef LSSOCKET_HPP
 #define LSSOCKET_HPP
 
-#include <system_error>
 #include <vector>
 #include <cstring>
 #include <cerrno>
@@ -19,11 +18,11 @@ namespace Sctp {
 
 namespace Socket {
 
-template<int IPV>
+template<int IPVersion>
 class Base {
-  static_assert(IPV == 4 or IPV == 6, "Invalid IP version");
+  static_assert(IPVersion == 4 or IPVersion == 6, "");
 public:
-  using SockAddrType = std::conditional_t<IPV == 4, sockaddr_in, sockaddr_in6>;
+  using SockAddrType = std::conditional_t<IPVersion == 4, sockaddr_in, sockaddr_in6>;
   using AddressArray = std::vector<SockAddrType>;
 protected:
   int fd;
@@ -46,12 +45,12 @@ private:
   auto checkIPConversionResult(Lua::State*, const char* ip, int result) noexcept -> int;
 };
 
-template<int IPV>
-inline Base<IPV>::Base() noexcept : haveBoundAddresses(false) {}
+template<int IPVersion>
+Base<IPVersion>::Base() noexcept : haveBoundAddresses(false) {}
 
-template<int IPV>
-inline auto Base<IPV>::create() noexcept -> bool {
-  fd = ::socket(IPV == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
+template<int IPVersion>
+auto Base<IPVersion>::create() noexcept -> bool {
+  fd = ::socket(IPVersion == 4 ? AF_INET : AF_INET6, SOCK_STREAM, IPPROTO_SCTP);
   if(fd == -1) {
     return false;
   }
@@ -60,16 +59,16 @@ inline auto Base<IPV>::create() noexcept -> bool {
   return true;
 }
 
-template<int IPV>
-inline Base<IPV>::Base(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
+template<int IPVersion>
+Base<IPVersion>::Base(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
 
-template<int IPV>
-inline auto Base<IPV>::destroy(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+ auto Base<IPVersion>::destroy(Lua::State* L) noexcept -> int {
   return close(L);
 }
 
-template<int IPV>
-inline auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+ auto Base<IPVersion>::setNonBlocking(Lua::State* L) noexcept -> int {
   int flags = fcntl(fd, F_GETFL);
   if(flags < 0) {
     Lua::PushBoolean(L, false);
@@ -86,8 +85,8 @@ inline auto Base<IPV>::setNonBlocking(Lua::State* L) noexcept -> int {
   return 1;
 }
 
-template<int IPV>
-auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+auto Base<IPVersion>::bind(Lua::State* L) noexcept -> int {
   int loadAddrResult = loadAddresses(L, boundAddresses);
   std::size_t addrCount = boundAddresses.size();
   if(loadAddrResult > 0) {
@@ -112,8 +111,8 @@ auto Base<IPV>::bind(Lua::State* L) noexcept -> int {
   return 1;
 }
 
-template<int IPV>
-inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcept -> int {
+template<int IPVersion>
+auto Base<IPVersion>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcept -> int {
   uint16_t port = htons(Lua::ToInteger(L, 2));
   int stackSize = Lua::GetTop(L);
   std::size_t addrCount = stackSize - 2;
@@ -136,8 +135,8 @@ inline auto Base<IPV>::loadAddresses(Lua::State* L, AddressArray& addrs) noexcep
   return 0;
 }
 
-template<int IPV>
-inline auto Base<IPV>::bindFirst(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+auto Base<IPVersion>::bindFirst(Lua::State* L) noexcept -> int {
   int bindRes = ::bind(fd, reinterpret_cast<sockaddr*>(boundAddresses.data()), sizeof(SockAddrType));
 
   if(bindRes < 0) {
@@ -164,8 +163,8 @@ inline auto Base<6>::pushIPAddress(Lua::State* L, AddressArray& addrs, const cha
   return checkIPConversionResult(L, ip, conversion);
 }
 
-template<int IPV>
-inline auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
+template<int IPVersion>
+auto Base<IPVersion>::checkIPConversionResult(Lua::State* L, const char* ip, int result) noexcept -> int {
   if(result == 0) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "inet_pton: invalid IP: %s", ip);
@@ -178,8 +177,8 @@ inline auto Base<IPV>::checkIPConversionResult(Lua::State* L, const char* ip, in
   return 0;
 }
 
-template<int IPV>
-auto Base<IPV>::close(Lua::State* L) noexcept -> int {
+template<int IPVersion>
+auto Base<IPVersion>::close(Lua::State* L) noexcept -> int {
   if(fd > -1 and ::close(fd) < 0) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "close: %s", std::strerror(errno));
