@@ -4,13 +4,13 @@
 
 #Known issues:
 # - array of arrays are badly indented
-# - visiblity modifiers are indented
-# - space is added for comments even though the offset is set to 0
+# - 
 
 
 Language: Cpp
 
-AccessModifierOffset: 0
+#Why does it have to a negative number instead of 2?
+AccessModifierOffset: -2
 AlignAfterOpenBracket: Align
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: false
@@ -42,6 +42,7 @@ BreakStringLiterals: false
 #0 (i.e. no limit) is also tempting
 ColumnLimit: 200
 
+CommentPragmas: '[^ ]'
 CompactNamespaces: false
 ConstructorInitializerAllOnOneLineOrOnePerLine: true
 
@@ -80,7 +81,7 @@ SpaceAfterTemplateKeyword: false
 SpaceBeforeAssignmentOperators: true
 SpaceBeforeParens: Never
 SpaceInEmptyParentheses: false
-SpacesBeforeTrailingComments: 0
+SpacesBeforeTrailingComments: 1
 SpacesInAngles: false
 SpacesInCStyleCastParentheses: false
 SpacesInContainerLiterals: true

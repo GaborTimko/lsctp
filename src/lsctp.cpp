@@ -76,6 +76,9 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (basePtr->*fn)(L);
 }
 
+//I haven't find a way yet to keep array of structures in the format below
+//So for now, clang-format is off-limits
+//clang format off
 const Lua::Aux::Reg ServerSocketMetaTable4[] = {
   { "bind",           CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::bind> },
   { "close",          CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::close> },
@@ -117,6 +120,7 @@ const Lua::Aux::Reg ClientSocketMetaTable6[] = {
   { "__gc",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::destroy> },
   { nullptr, nullptr }
 };
+//clang format on
 
 } //anonymous namespace
 
