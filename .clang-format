@@ -4,7 +4,8 @@
 
 #Known issues:
 # - array of arrays are badly indented
-# - 
+# - adds extra line break between class member declarations
+#   with different access modifiers
 
 
 Language: Cpp
@@ -26,7 +27,7 @@ AllowShortFunctionsOnASingleLine: Inline
 #AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations : true
+AlwaysBreakTemplateDeclarations : false
 BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: None
