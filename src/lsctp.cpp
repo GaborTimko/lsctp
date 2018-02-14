@@ -72,48 +72,55 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (basePtr->*fn)(L);
 }
 
+template<int IPVersion, template<int> class SocketType>
+auto DestroySocket(Lua::State* L) noexcept -> int {
+  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
+  sock->SocketType<IPVersion>::~SocketType();
+  return 0;
+}
+
 //I haven't find a way yet to keep array of structures in the format below
 //So for now, clang-format is off-limits
 // clang-format off
 const Lua::Aux::Reg ServerSocketMetaTable4[] = {
-  { "bind",           CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::bind>           },
-  { "close",          CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::close>          },
-  { "listen",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::listen>         },
-  { "accept",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::accept>         },
+  { "bind",           CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::bind> },
+  { "close",          CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::close> },
+  { "listen",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::listen> },
+  { "accept",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::accept> },
   { "setnonblocking", CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::setNonBlocking> },
-  { "__gc",           CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::destroy         },
+  { "__gc",           DestroySocket<4, Sctp::Socket::Server> },
   { nullptr, nullptr }
 };
 
 const Lua::Aux::Reg ServerSocketMetaTable6[] = {
-  { "bind",           CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::bind>           },
-  { "close",          CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::close>          },
-  { "listen",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::listen>         },
-  { "accept",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::accept>         },
+  { "bind",           CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::bind> },
+  { "close",          CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::close> },
+  { "listen",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::listen> },
+  { "accept",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::accept> },
   { "setnonblocking", CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::setNonBlocking> },
-  { "__gc",           CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::destroy>        },
+  { "__gc",           DestroySocket<6, Sctp::Socket::Server> },
   { nullptr, nullptr }
 };
 
 const Lua::Aux::Reg ClientSocketMetaTable4[] = {
-  { "bind",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind>           },
-  { "connect",        CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::connect>        },
-  { "send",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::send>           },
-  { "recv",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::recv>           },
-  { "close",          CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close>          },
+  { "bind",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind> },
+  { "connect",        CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::connect> },
+  { "send",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::send> },
+  { "recv",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::recv> },
+  { "close",          CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
   { "setnonblocking", CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::setNonBlocking> },
-  { "__gc",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::destroy>        },
+  { "__gc",           DestroySocket<4, Sctp::Socket::Client> },
   { nullptr, nullptr }
 };
 
 const Lua::Aux::Reg ClientSocketMetaTable6[] = {
-  { "bind",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind>           },
-  { "connect",        CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::connect>        },
-  { "send",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::send>           },
-  { "recv",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::recv>           },
-  { "close",          CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close>          },
+  { "bind",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind> },
+  { "connect",        CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::connect> },
+  { "send",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::send> },
+  { "recv",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::recv> },
+  { "close",          CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
   { "setnonblocking", CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::setNonBlocking> },
-  { "__gc",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::destroy>        },
+  { "__gc",           DestroySocket<6, Sctp::Socket::Client> },
   { nullptr, nullptr }
 };
 // clang-format on

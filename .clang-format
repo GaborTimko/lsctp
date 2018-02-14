@@ -27,7 +27,7 @@ AllowShortFunctionsOnASingleLine: Inline
 #AllowShortLoopsOnASingleLine: false
 AlwaysBreakAfterReturnType: None
 AlwaysBreakBeforeMultilineStrings: false
-AlwaysBreakTemplateDeclarations : false
+AlwaysBreakTemplateDeclarations : true
 BinPackArguments: false
 BinPackParameters: false
 BreakBeforeBinaryOperators: None

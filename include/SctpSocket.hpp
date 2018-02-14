@@ -31,11 +31,11 @@ protected:
 public:
   Base() noexcept;
   Base(int sock) noexcept;
+  ~Base();
 public:
   auto create() noexcept -> bool;
   auto bind(Lua::State*) noexcept -> int;
   auto close(Lua::State*) noexcept -> int;
-  auto destroy(Lua::State*) noexcept -> int;
   auto setNonBlocking(Lua::State*) noexcept -> int;
 protected:
   auto loadAddresses(Lua::State*, AddressArray&) noexcept -> int;
@@ -63,8 +63,8 @@ template<int IPVersion>
 Base<IPVersion>::Base(int sock) noexcept : fd(sock), haveBoundAddresses(false) {}
 
 template<int IPVersion>
- auto Base<IPVersion>::destroy(Lua::State* L) noexcept -> int {
-  return close(L);
+Base<IPVersion>::~Base() {
+  ::close(fd);
 }
 
 template<int IPVersion>
