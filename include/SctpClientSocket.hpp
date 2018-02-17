@@ -19,8 +19,8 @@ public:
   Client(int sock);
 public:
   auto connect(Lua::State*) noexcept -> int;
-  auto send(Lua::State*) noexcept -> int;
-  auto recv(Lua::State*) noexcept -> int;
+  auto sendmsg(Lua::State*) noexcept -> int;
+  auto recvmsg(Lua::State*) noexcept -> int;
 };
 
 template<int IPVersion>
@@ -45,7 +45,7 @@ auto Client<IPVersion>::connect(Lua::State* L) noexcept -> int {
 }
 
 template<int IPVersion>
-auto Client<IPVersion>::send(Lua::State* L) noexcept -> int {
+auto Client<IPVersion>::sendmsg(Lua::State* L) noexcept -> int {
   std::size_t bufferLength;
   auto buffer = Lua::Aux::CheckLString(L, -1, bufferLength);
 
@@ -64,7 +64,7 @@ auto Client<IPVersion>::send(Lua::State* L) noexcept -> int {
 }
 
 template<int IPVersion>
-auto Client<IPVersion>::recv(Lua::State* L) noexcept -> int {
+auto Client<IPVersion>::recvmsg(Lua::State* L) noexcept -> int {
 //  sctp_sndrcvinfo info;
 //  std::memset(&info, 0, sizeof(sctp_sndrcvinfo));
 
@@ -73,7 +73,7 @@ auto Client<IPVersion>::recv(Lua::State* L) noexcept -> int {
   ssize_t numBytesReceived = ::sctp_recvmsg(this->fd, recvBuffer, MaxRecvBufferSize, nullptr, nullptr, nullptr, nullptr);
   if(numBytesReceived < 0) {
     Lua::PushBoolean(L, false);
-    Lua::PushFString(L, (errno == EAGAIN or errno == EWOULDBLOCK? "EAGAIN/EWOULDBLOCK" : "sctp_recvmsg: %s"), std::strerror(errno));
+    Lua::PushFString(L, (errno == EAGAIN or errno == EWOULDBLOCK ? "EAGAIN/EWOULDBLOCK" : "sctp_recvmsg: %s"), std::strerror(errno));
     return 2;
   }
   Lua::PushInteger(L, numBytesReceived);

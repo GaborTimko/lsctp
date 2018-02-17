@@ -26,12 +26,14 @@ namespace {
 template<class SocketType>
 auto UserDataToSocket(Lua::State* L, int idx) -> SocketType* {
   static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
+
   return Lua::Aux::TestUData<SocketType>(L, idx, SocketType::MetaTableName);
 }
 
 template<class SocketType>
 auto New(Lua::State* L) -> int {
   static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
+
   auto sock = Lua::NewUserData<SocketType>(L);
   if(sock == nullptr) {
     Lua::PushNil(L);
@@ -55,6 +57,8 @@ using MemberFuncType = int (SocketType<IPVersion>::*)(Lua::State*);
 
 template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion, SocketType> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
+  static_assert(Sctp::IsSctpSocket<SocketType<IPVersion>>::value, "");
+
   auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
@@ -66,6 +70,8 @@ auto CallMemberFunction(Lua::State* L) -> int {
 
 template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
+  static_assert(Sctp::IsSctpSocket<SocketType<IPVersion>>::value, "");
+
   auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
@@ -79,6 +85,7 @@ auto CallMemberFunction(Lua::State* L) -> int {
 template<class SocketType>
 auto DestroySocket(Lua::State* L) noexcept -> int {
   static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
+
   auto sock = UserDataToSocket<SocketType>(L, 1);
   sock->SocketType::~SocketType();
   return 0;
@@ -110,8 +117,8 @@ const Lua::Aux::Reg ServerSocketMetaTable6[] = {
 const Lua::Aux::Reg ClientSocketMetaTable4[] = {
   { "bind",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::bind> },
   { "connect",        CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::connect> },
-  { "send",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::send> },
-  { "recv",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::recv> },
+  { "send",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::sendmsg> },
+  { "recv",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::recvmsg> },
   { "close",          CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
   { "setnonblocking", CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::setNonBlocking> },
   { "__gc",           DestroySocket<Sctp::Socket::Client<4>> },
@@ -121,8 +128,8 @@ const Lua::Aux::Reg ClientSocketMetaTable4[] = {
 const Lua::Aux::Reg ClientSocketMetaTable6[] = {
   { "bind",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::bind> },
   { "connect",        CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::connect> },
-  { "send",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::send> },
-  { "recv",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::recv> },
+  { "send",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::sendmsg> },
+  { "recv",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::recvmsg> },
   { "close",          CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
   { "setnonblocking", CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::setNonBlocking> },
   { "__gc",           DestroySocket<Sctp::Socket::Client<6>> },
