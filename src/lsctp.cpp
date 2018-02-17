@@ -1,3 +1,5 @@
+#include <type_traits>
+
 #include "Lua/Lua.hpp"
 #include "SctpSocket.hpp"
 #include "SctpServerSocket.hpp"
@@ -21,27 +23,28 @@ template<> const char* Client<6>::MetaTableName = "ClientSocketMeta6";
 
 namespace {
 
-template<int IPVersion, template<int> class SocketType>
-auto UserDataToSocket(Lua::State* L, int idx) -> SocketType<IPVersion>* {
-  return Lua::Aux::TestUData<SocketType<IPVersion>>(L, idx, SocketType<IPVersion>::MetaTableName);
+template<class SocketType>
+auto UserDataToSocket(Lua::State* L, int idx) -> SocketType* {
+  static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
+  return Lua::Aux::TestUData<SocketType>(L, idx, SocketType::MetaTableName);
 }
 
-template<int IPVersion, template<int> class SocketType>
+template<class SocketType>
 auto New(Lua::State* L) -> int {
-  auto sock = Lua::NewUserData<SocketType<IPVersion>>(L);
+  auto sock = Lua::NewUserData<SocketType>(L);
   if(sock == nullptr) {
     Lua::PushNil(L);
     Lua::PushString(L, "Socket userdata allocation failed");
     return 2;
   }
-  new (sock) SocketType<IPVersion>();
+  new (sock) SocketType();
   if (not sock->create()) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "socket(): %s", std::strerror(errno));
     return 2;
   }
 
-  Lua::Aux::GetMetaTable(L, SocketType<IPVersion>::MetaTableName);
+  Lua::Aux::GetMetaTable(L, SocketType::MetaTableName);
   Lua::SetMetaTable(L, -2);
   return 1;
 }
@@ -51,7 +54,7 @@ using MemberFuncType = int (SocketType<IPVersion>::*)(Lua::State*);
 
 template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion, SocketType> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
-  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
+  auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "Can\'t call function, pointer is nil.");
@@ -62,7 +65,7 @@ auto CallMemberFunction(Lua::State* L) -> int {
 
 template<int IPVersion,  template<int> class SocketType, MemberFuncType<IPVersion> fn>
 auto CallMemberFunction(Lua::State* L) -> int {
-  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
+  auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
   if  (sock == nullptr) {
     Lua::PushBoolean(L, false);
     Lua::PushFString(L, "Can\'t call function, pointer is nil.");
@@ -74,7 +77,7 @@ auto CallMemberFunction(Lua::State* L) -> int {
 
 template<int IPVersion, template<int> class SocketType>
 auto DestroySocket(Lua::State* L) noexcept -> int {
-  auto sock = UserDataToSocket<IPVersion, SocketType>(L, 1);
+  auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
   sock->SocketType<IPVersion>::~SocketType();
   return 0;
 }
@@ -152,16 +155,16 @@ extern "C" int luaopen_sctp(Lua::State* L) {
   Lua::Aux::NewLib(L, SocketFuncs);
 
   Lua::Newtable(L);
-  Lua::PushCFunction(L, New<4, Sctp::Socket::Server>);
+  Lua::PushCFunction(L, New<Sctp::Socket::Server<4>>);
   Lua::SetField(L, -2, "socket4");
-  Lua::PushCFunction(L, New<6, Sctp::Socket::Server>);
+  Lua::PushCFunction(L, New<Sctp::Socket::Server<6>>);
   Lua::SetField(L, -2, "socket6");
   Lua::SetField(L, -2, "server");
 
   Lua::Newtable(L);
-  Lua::PushCFunction(L, New<4, Sctp::Socket::Client>);
+  Lua::PushCFunction(L, New<Sctp::Socket::Client<4>>);
   Lua::SetField(L, -2, "socket4");
-  Lua::PushCFunction(L, New<6, Sctp::Socket::Client>);
+  Lua::PushCFunction(L, New<Sctp::Socket::Client<6>>);
   Lua::SetField(L, -2, "socket6");
   Lua::SetField(L, -2, "client");
 

@@ -4,6 +4,7 @@
 #include <vector>
 #include <cstring>
 #include <cerrno>
+#include <type_traits>
 
 #include <sys/socket.h>
 #include <netinet/in.h>
@@ -24,6 +25,7 @@ class Base {
 public:
   using SockAddrType = std::conditional_t<IPVersion == 4, sockaddr_in, sockaddr_in6>;
   using AddressArray = std::vector<SockAddrType>;
+  static constexpr int IPv = IPVersion;
 protected:
   int fd;
   bool haveBoundAddresses;
@@ -192,6 +194,14 @@ auto Base<IPVersion>::close(Lua::State* L) noexcept -> int {
 }
 
 } //namespace Socket
+
+template<class Type>
+struct IsSctpSocket : public std::integral_constant<bool,
+                                                    std::is_same<Type, Socket::Base<4>>::value or
+                                                    std::is_same<Type, Socket::Base<6>>::value or
+                                                    std::is_base_of<Socket::Base<4>, Type>::value or
+                                                    std::is_base_of<Socket::Base<6>, Type>::value> {
+};
 
 } //namespace Sctp
 
