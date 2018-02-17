@@ -31,6 +31,7 @@ auto UserDataToSocket(Lua::State* L, int idx) -> SocketType* {
 
 template<class SocketType>
 auto New(Lua::State* L) -> int {
+  static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
   auto sock = Lua::NewUserData<SocketType>(L);
   if(sock == nullptr) {
     Lua::PushNil(L);
@@ -75,14 +76,15 @@ auto CallMemberFunction(Lua::State* L) -> int {
   return (basePtr->*fn)(L);
 }
 
-template<int IPVersion, template<int> class SocketType>
+template<class SocketType>
 auto DestroySocket(Lua::State* L) noexcept -> int {
-  auto sock = UserDataToSocket<SocketType<IPVersion>>(L, 1);
-  sock->SocketType<IPVersion>::~SocketType();
+  static_assert(Sctp::IsSctpSocket<SocketType>::value, "");
+  auto sock = UserDataToSocket<SocketType>(L, 1);
+  sock->SocketType::~SocketType();
   return 0;
 }
 
-//I haven't find a way yet to keep array of structures in the format below
+//I haven't found a way yet to keep array of structures in the format below
 //So for now, clang-format is off-limits
 // clang-format off
 const Lua::Aux::Reg ServerSocketMetaTable4[] = {
@@ -91,7 +93,7 @@ const Lua::Aux::Reg ServerSocketMetaTable4[] = {
   { "listen",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::listen> },
   { "accept",         CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::accept> },
   { "setnonblocking", CallMemberFunction<4, Sctp::Socket::Server, &Sctp::Socket::Server<4>::setNonBlocking> },
-  { "__gc",           DestroySocket<4, Sctp::Socket::Server> },
+  { "__gc",           DestroySocket<Sctp::Socket::Server<4>> },
   { nullptr, nullptr }
 };
 
@@ -101,7 +103,7 @@ const Lua::Aux::Reg ServerSocketMetaTable6[] = {
   { "listen",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::listen> },
   { "accept",         CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::accept> },
   { "setnonblocking", CallMemberFunction<6, Sctp::Socket::Server, &Sctp::Socket::Server<6>::setNonBlocking> },
-  { "__gc",           DestroySocket<6, Sctp::Socket::Server> },
+  { "__gc",           DestroySocket<Sctp::Socket::Server<6>> },
   { nullptr, nullptr }
 };
 
@@ -112,7 +114,7 @@ const Lua::Aux::Reg ClientSocketMetaTable4[] = {
   { "recv",           CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::recv> },
   { "close",          CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::close> },
   { "setnonblocking", CallMemberFunction<4, Sctp::Socket::Client, &Sctp::Socket::Client<4>::setNonBlocking> },
-  { "__gc",           DestroySocket<4, Sctp::Socket::Client> },
+  { "__gc",           DestroySocket<Sctp::Socket::Client<4>> },
   { nullptr, nullptr }
 };
 
@@ -123,7 +125,7 @@ const Lua::Aux::Reg ClientSocketMetaTable6[] = {
   { "recv",           CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::recv> },
   { "close",          CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::close> },
   { "setnonblocking", CallMemberFunction<6, Sctp::Socket::Client, &Sctp::Socket::Client<6>::setNonBlocking> },
-  { "__gc",           DestroySocket<6, Sctp::Socket::Client> },
+  { "__gc",           DestroySocket<Sctp::Socket::Client<6>> },
   { nullptr, nullptr }
 };
 // clang-format on
