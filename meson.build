@@ -8,11 +8,8 @@ shared_library(
   'src/lsctp.cpp',
   name_prefix : '',
   dependencies : [libsctp, luadep],
-  cpp_args : '-Wall -Wextra -Wformat -pedantic -march=native --coverage'.split(),
   include_directories : include_directories('include'),
   link_args: '--coverage'.split(),
-  #install : true,
-  #đinstall_dir : get_option('prefix') + '/bin'
 )
 
 luaInterpreter = find_program('lua')

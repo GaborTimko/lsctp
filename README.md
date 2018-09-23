@@ -6,11 +6,6 @@ Limitations:
 - Mixing IPv4 and IPv6 addresses are not supported
 - Usage of deprecated sctp_sendmsg() and sctp_recvmsg() functions (because of lksctp-tools)
 
-Missing, but planned features:
-- setsockopt() and getsockopt()
-- Sctp event handling
-- Additional parameters for send(): ppid, stream number, flags, etc
-
 Example usage:
 ```lua
 sctp = require "sctp"
